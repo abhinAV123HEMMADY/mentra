@@ -2,6 +2,7 @@ import { useState } from "react";
 import { searchTutors } from "../api/rest";
 import BookingModal from "../components/BookingModal";
 import TutorCard from "../components/TutorCard";
+import { ArrowIcon } from "../components/Icons";
 import type { TutorResult } from "../types";
 
 export default function TutorHub() {
@@ -10,6 +11,7 @@ export default function TutorHub() {
   const [format, setFormat] = useState<string>("");
   const [verificationTier, setVerificationTier] = useState<string>("");
   const [results, setResults] = useState<TutorResult[]>([]);
+  const [searched, setSearched] = useState(false);
   const [bookingTutorId, setBookingTutorId] = useState<string | null>(null);
 
   const search = async () => {
@@ -21,42 +23,71 @@ export default function TutorHub() {
       verification_tier: verificationTier || undefined,
     });
     setResults(tutors);
+    setSearched(true);
   };
 
   return (
     <div>
-      <h2>Tutor Hub</h2>
+      <div className="page-title">
+        <span className="eyebrow">Tutor Hub</span>
+        <h2>Find human help</h2>
+      </div>
+
       <div className="card">
-        <div className="row">
-          <input value={topicQuery} onChange={(e) => setTopicQuery(e.target.value)} placeholder="topic" />
+        <div className="stack">
           <input
-            value={priceMax}
-            onChange={(e) => setPriceMax(e.target.value)}
-            placeholder="max $/hr"
-            style={{ width: 100 }}
+            value={topicQuery}
+            onChange={(e) => setTopicQuery(e.target.value)}
+            placeholder="Topic"
           />
-          <select value={format} onChange={(e) => setFormat(e.target.value)}>
-            <option value="">any format</option>
-            <option value="virtual">virtual</option>
-            <option value="in_person">in person</option>
-          </select>
+          <div className="row" style={{ gap: 8 }}>
+            <input
+              value={priceMax}
+              onChange={(e) => setPriceMax(e.target.value)}
+              placeholder="Max $/hr"
+              inputMode="numeric"
+              style={{ flex: 1, minWidth: 0 }}
+            />
+            <select
+              value={format}
+              onChange={(e) => setFormat(e.target.value)}
+              style={{ flex: 1, minWidth: 0 }}
+            >
+              <option value="">Any format</option>
+              <option value="virtual">Virtual</option>
+              <option value="in_person">In person</option>
+            </select>
+          </div>
           <select value={verificationTier} onChange={(e) => setVerificationTier(e.target.value)}>
-            <option value="">any tier</option>
-            <option value="unverified">unverified</option>
-            <option value="basic">basic</option>
-            <option value="background_checked">background checked</option>
+            <option value="">Any verification tier</option>
+            <option value="unverified">Unverified</option>
+            <option value="basic">Basic</option>
+            <option value="background_checked">Background checked</option>
           </select>
-          <button onClick={search}>Search</button>
+          <button onClick={search}>
+            Search tutors <ArrowIcon size={16} />
+          </button>
         </div>
       </div>
 
-      <div className="grid">
-        {results.map((t) => (
-          <TutorCard key={t.id} tutor={t} onBook={() => setBookingTutorId(t.id)} />
-        ))}
-      </div>
+      {results.length > 0 ? (
+        <div className="grid stagger">
+          {results.map((t) => (
+            <TutorCard key={t.id} tutor={t} onBook={() => setBookingTutorId(t.id)} />
+          ))}
+        </div>
+      ) : (
+        searched && (
+          <div className="empty card">
+            <span className="emoji">🔍</span>
+            No tutors match those filters — try loosening the price or tier.
+          </div>
+        )
+      )}
 
-      {bookingTutorId && <BookingModal tutorId={bookingTutorId} onClose={() => setBookingTutorId(null)} />}
+      {bookingTutorId && (
+        <BookingModal tutorId={bookingTutorId} onClose={() => setBookingTutorId(null)} />
+      )}
     </div>
   );
 }

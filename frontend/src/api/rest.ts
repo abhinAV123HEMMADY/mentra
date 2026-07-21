@@ -1,4 +1,4 @@
-import type { SquadProposal, StruggleFeedItem, TutorResult } from "../types";
+import type { MasteryGraph, SquadProposal, StruggleFeedItem, TutorResult } from "../types";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
@@ -62,6 +62,62 @@ export async function getStruggleFeed(userId: string) {
 export async function getSquadProposals(topicId: string) {
   const res = await fetch(`${API_BASE}/peer/squads/${topicId}`);
   return res.json() as Promise<SquadProposal[]>;
+}
+
+export async function getMasteryGraph(userId: string): Promise<MasteryGraph> {
+  try {
+    const res = await fetch(`${API_BASE}/mastery/graph/${userId}`);
+    if (!res.ok) throw new Error(String(res.status));
+    return (await res.json()) as MasteryGraph;
+  } catch {
+    // Fallback so the map always demos even without the backend running.
+    return demoMasteryGraph(userId);
+  }
+}
+
+function demoMasteryGraph(userId: string): MasteryGraph {
+  // Mirrors the seeded chain (functions → limits → derivatives → integration).
+  // Amy is the "weak on limits" demo learner; others get a healthier profile.
+  const amy = userId === "u_amy";
+  const nodes = [
+    { id: "functions", name: "functions", mastery: 0.9, retr: 0.95 },
+    { id: "limits", name: "limits", mastery: amy ? 0.2 : 0.82, retr: amy ? 0.6 : 0.7 },
+    { id: "derivatives", name: "derivatives", mastery: amy ? 0.35 : 0.74, retr: 0.65 },
+    { id: "integration-basics", name: "integration basics", mastery: 0.5, retr: 0.55 },
+    { id: "integration-by-parts", name: "integration by parts", mastery: 0.0, retr: null as number | null },
+  ].map((n) => {
+    const effective = n.retr === null ? n.mastery : n.mastery * n.retr;
+    const isPrereq = n.id !== "integration-by-parts";
+    let status: MasteryGraph["nodes"][number]["status"];
+    if (n.mastery === 0 && n.retr === null) status = "untouched";
+    else if (effective < 0.5) status = isPrereq ? "gap" : "weak";
+    else if (n.retr !== null && n.retr < 0.8) status = "decaying";
+    else status = "mastered";
+    return {
+      id: n.id,
+      name: n.name,
+      subject: "math",
+      mastery: n.mastery,
+      retrievability: n.retr,
+      effective_mastery: Number(effective.toFixed(3)),
+      status,
+      cards_tracked: n.retr === null ? 0 : 8,
+    };
+  });
+  const edges = [
+    { from: "functions", to: "limits" },
+    { from: "limits", to: "derivatives" },
+    { from: "derivatives", to: "integration-basics" },
+    { from: "integration-basics", to: "integration-by-parts" },
+  ];
+  const summary = {
+    mastered: nodes.filter((n) => n.status === "mastered").length,
+    decaying: nodes.filter((n) => n.status === "decaying").length,
+    gaps: nodes.filter((n) => n.status === "gap" || n.status === "weak").length,
+    untouched: nodes.filter((n) => n.status === "untouched").length,
+    overall: Number((nodes.reduce((s, n) => s + n.effective_mastery, 0) / nodes.length).toFixed(3)),
+  };
+  return { nodes, edges, summary };
 }
 
 export function postQna(topicId: string, authorId: string, body: string) {

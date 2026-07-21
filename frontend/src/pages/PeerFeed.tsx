@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getSquadProposals, getStruggleFeed, postQna } from "../api/rest";
 import SquadCard from "../components/SquadCard";
 import StruggleHeatmap from "../components/StruggleHeatmap";
+import { ArrowIcon, CheckIcon } from "../components/Icons";
 import { useLearner } from "../LearnerContext";
 import type { SquadProposal, StruggleFeedItem } from "../types";
 
@@ -26,30 +27,58 @@ export default function PeerFeed() {
 
   return (
     <div>
-      <h2>Struggle feed</h2>
-      <p className="muted">Signals from your connections — relative only, never a raw score (Section 7.2).</p>
-      <StruggleHeatmap items={feed} />
-
-      <h2 style={{ marginTop: 24 }}>Study squads</h2>
-      {squads.length === 0 ? (
-        <p className="muted">No squad proposed yet for "derivatives" — needs 3+ connected learners struggling.</p>
-      ) : (
-        squads.map((s) => <SquadCard key={s.id} squad={s} />)
-      )}
-
-      <h2 style={{ marginTop: 24 }}>Q&A: derivatives</h2>
-      <div className="card">
-        <div className="row">
-          <input
-            style={{ flex: 1 }}
-            placeholder="Ask a question..."
-            value={qnaBody}
-            onChange={(e) => setQnaBody(e.target.value)}
-          />
-          <button onClick={submitQna}>Post</button>
-        </div>
-        {qnaStatus && <p className="muted">Moderation status: {qnaStatus}</p>}
+      <div className="page-title">
+        <span className="eyebrow">Peer Insight</span>
+        <h2>You're not the only one stuck</h2>
       </div>
+
+      <section>
+        <div className="row" style={{ justifyContent: "space-between", padding: "0 2px 8px" }}>
+          <strong>Struggle feed</strong>
+          <span className="faint">relative signal only</span>
+        </div>
+        <StruggleHeatmap items={feed} />
+      </section>
+
+      <section style={{ marginTop: 22 }}>
+        <strong style={{ display: "block", padding: "0 2px 8px" }}>Study squads</strong>
+        {squads.length === 0 ? (
+          <div className="empty card" style={{ marginBottom: 0 }}>
+            <span className="emoji">🧩</span>
+            No squad yet for “derivatives” — needs 3+ connected learners struggling on the same node.
+          </div>
+        ) : (
+          <div className="stagger">
+            {squads.map((s) => (
+              <SquadCard key={s.id} squad={s} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section style={{ marginTop: 22 }}>
+        <strong style={{ display: "block", padding: "0 2px 8px" }}>Q&A · derivatives</strong>
+        <div className="card">
+          <div className="stack">
+            <textarea
+              rows={3}
+              placeholder="Ask the group a question…"
+              value={qnaBody}
+              onChange={(e) => setQnaBody(e.target.value)}
+              style={{ resize: "none" }}
+            />
+            <button onClick={submitQna} disabled={!qnaBody.trim()}>
+              Post to feed <ArrowIcon size={16} />
+            </button>
+          </div>
+          {qnaStatus && (
+            <p className="faint" style={{ marginBottom: 0, marginTop: 12 }}>
+              <CheckIcon size={13} className="muted" /> Moderation: {qnaStatus} — screened before
+              peers see it.
+            </p>
+          )}
+        </div>
+      </section>
     </div>
   );
 }

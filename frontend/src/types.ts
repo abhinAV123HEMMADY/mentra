@@ -73,3 +73,33 @@ export interface SquadProposal {
   topic_id: string;
   member_ids: string[];
 }
+
+export type MasteryStatus = "mastered" | "decaying" | "gap" | "weak" | "untouched";
+
+export interface MasteryNode {
+  id: string;
+  name: string;
+  subject: string;
+  mastery: number;
+  retrievability: number | null;
+  effective_mastery: number;
+  status: MasteryStatus;
+  cards_tracked: number;
+}
+
+export interface MasteryEdge {
+  from: string;
+  to: string;
+}
+
+export interface MasteryGraph {
+  nodes: MasteryNode[];
+  edges: MasteryEdge[];
+  summary: {
+    mastered: number;
+    decaying: number;
+    gaps: number;
+    untouched: number;
+    overall: number;
+  };
+}

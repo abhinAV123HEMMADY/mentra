@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { bookTutor, getTutorAvailability } from "../api/rest";
+import { CheckIcon, CloseIcon } from "./Icons";
 import { useLearner } from "../LearnerContext";
 
 export default function BookingModal({ tutorId, onClose }: { tutorId: string; onClose: () => void }) {
   const { learnerId } = useLearner();
   const [slots, setSlots] = useState<string[]>([]);
-  const [holdResult, setHoldResult] = useState<{ status: string; booking_id: string | null } | null>(null);
+  const [holdResult, setHoldResult] = useState<{ status: string; booking_id: string | null } | null>(
+    null,
+  );
 
   useEffect(() => {
     const weekStart = new Date().toISOString().slice(0, 10);
@@ -18,37 +21,53 @@ export default function BookingModal({ tutorId, onClose }: { tutorId: string; on
   };
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.6)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-      onClick={onClose}
-    >
-      <div className="card" style={{ maxWidth: 480, width: "90%" }} onClick={(e) => e.stopPropagation()}>
-        <h3>Available slots this week</h3>
+    <div className="scrim" onClick={onClose}>
+      <div className="sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-grip" />
+        <div className="row" style={{ justifyContent: "space-between", marginBottom: 6 }}>
+          <h3 style={{ margin: 0 }}>Available this week</h3>
+          <button className="icon-btn" onClick={onClose} aria-label="Close">
+            <CloseIcon />
+          </button>
+        </div>
+
         {holdResult ? (
-          <p>
-            Hold status: <strong>{holdResult.status}</strong>
-            {holdResult.booking_id && <span className="muted"> — booking {holdResult.booking_id} (15 min hold)</span>}
+          <div className="empty" style={{ padding: "28px 12px" }}>
+            <span className="emoji">✅</span>
+            <p style={{ margin: 0 }}>
+              Hold <strong>{holdResult.status}</strong>
+            </p>
+            {holdResult.booking_id && (
+              <p className="faint" style={{ marginTop: 6 }}>
+                Booking {holdResult.booking_id} · expires in 15 min if unconfirmed
+              </p>
+            )}
+          </div>
+        ) : slots.length === 0 ? (
+          <p className="muted" style={{ padding: "8px 0" }}>
+            No open slots this week.
           </p>
         ) : (
-          <div className="grid">
-            {slots.length === 0 && <p className="muted">No open slots.</p>}
+          <div className="stack" style={{ marginTop: 8 }}>
             {slots.map((slot) => (
-              <button key={slot} className="secondary" onClick={() => book(slot)}>
-                {new Date(slot).toLocaleString()}
+              <button
+                key={slot}
+                className="secondary"
+                style={{ justifyContent: "space-between", width: "100%" }}
+                onClick={() => book(slot)}
+              >
+                {new Date(slot).toLocaleString(undefined, {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                })}
+                <CheckIcon size={16} className="muted" />
               </button>
             ))}
           </div>
         )}
-        <button style={{ marginTop: 12 }} className="secondary" onClick={onClose}>
-          Close
-        </button>
       </div>
     </div>
   );
