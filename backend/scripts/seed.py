@@ -44,6 +44,52 @@ TOPIC_CHAIN = [
     ("integration-by-parts", "math"),
 ]
 
+# "derivatives" gets a rich Protégé Mode misconception set (Section 9.5) so the persona's
+# questions feel genuinely naive rather than generic; keywords are what a correct explanation
+# would plausibly say, used by the deterministic scorer stub to detect resolution.
+DERIVATIVE_MISCONCEPTIONS = [
+    {
+        "id": "constant-vanishes",
+        "sub_concept": "Constants have derivative zero because they don't change with x",
+        "misconception_prompt": "Wait, why does the +5 just disappear when you take the derivative? Doesn't the 5 matter for the answer?",
+        "keywords": ["rate of change", "doesn't change", "constant", "flat", "slope of zero", "no x"],
+        "hint": "A derivative measures how much something changes as x changes. Ask yourself: does the +5 change at all as x moves?",
+        "explanation": "A derivative measures the rate of change with respect to x. A constant like +5 never changes as x changes, so it contributes nothing to the rate of change — it drops out, even though the function's actual value is still shifted by 5.",
+    },
+    {
+        "id": "power-rule-mechanics",
+        "sub_concept": "The power rule multiplies by the exponent and drops it by one — the exponent doesn't just vanish",
+        "misconception_prompt": "Okay so x^3 becomes x^2 — but why does the exponent just go down by one for no reason? What happened to the 3?",
+        "keywords": ["multiply", "coefficient", "bring down", "n times", "n*x", "exponent minus"],
+        "hint": "The 3 doesn't disappear — it moves. Try writing out x^3 as x*x*x and think about where a factor of 3 could come from.",
+        "explanation": "The power rule comes from expanding x^n and differentiating term by term: the exponent becomes a multiplier out front, and the power on x drops by one — d/dx[x^3] = 3x^2. The 3 doesn't vanish, it moves from the exponent to become a coefficient.",
+    },
+    {
+        "id": "derivative-vs-tangent-slope",
+        "sub_concept": "The derivative at a point IS the slope of the tangent line there, not a separate related idea",
+        "misconception_prompt": "Is the derivative a totally different thing from the slope of the tangent line, or are those actually the same number?",
+        "keywords": ["tangent", "slope", "same thing", "equals the slope", "instantaneous"],
+        "hint": "Picture zooming into the curve at one point until it looks like a straight line — what does that line's steepness equal?",
+        "explanation": "The derivative at a point is defined exactly as the slope of the tangent line to the curve at that point — they're the same number, not two related-but-different ideas.",
+    },
+    {
+        "id": "average-vs-instantaneous-rate",
+        "sub_concept": "Average rate of change over an interval is different from the instantaneous rate at one point",
+        "misconception_prompt": "If I already know the average speed over the whole trip, isn't that the same as the derivative at any moment during it?",
+        "keywords": ["instantaneous", "average", "one point", "single moment", "not the same", "interval"],
+        "hint": "Think of a car trip: the average speed for the whole drive can be 40mph even if the car was stopped at a light at one moment. Are those two numbers describing the same thing?",
+        "explanation": "Average rate of change is the slope between two points over an interval — total change divided by total time. The derivative is the instantaneous rate at one exact point. A car's average speed for a whole trip can differ a lot from its speedometer reading at any single moment.",
+    },
+    {
+        "id": "product-rule-not-multiply-derivatives",
+        "sub_concept": "The derivative of a product isn't just the product of the two derivatives — it needs the product rule",
+        "misconception_prompt": "For f(x) = x^2 * sin(x), can't I just take the derivative of x^2 and the derivative of sin(x) separately and multiply them?",
+        "keywords": ["product rule", "f'g", "fg'", "first times derivative", "can't just multiply"],
+        "hint": "Try it on something simple like x^2 * x^2 (which is just x^4). Does multiplying the two separate derivatives (2x)(2x) actually give you the derivative of x^4?",
+        "explanation": "For a product f(x)g(x), the derivative is f'(x)g(x) + f(x)g'(x) — you can't just multiply the two derivatives together, because that misses how each function's change interacts with the other function's current value.",
+    },
+]
+
 LEARNERS = [
     ("u_amy", "Amy", "10th grade"),
     ("u_ben", "Ben", "10th grade"),
@@ -67,7 +113,15 @@ async def main():
 
         # --- Topics ---
         for name, subject in TOPIC_CHAIN:
-            db.add(Topic(id=name, name=name.replace("-", " "), subject=subject, content_embedding=pseudo_embed(name)))
+            db.add(
+                Topic(
+                    id=name,
+                    name=name.replace("-", " "),
+                    subject=subject,
+                    content_embedding=pseudo_embed(name),
+                    common_misconceptions=DERIVATIVE_MISCONCEPTIONS if name == "derivatives" else None,
+                )
+            )
         await db.flush()
 
         # --- Prerequisite chain (FKs to topics) ---

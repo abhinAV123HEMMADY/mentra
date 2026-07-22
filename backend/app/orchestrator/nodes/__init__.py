@@ -3,10 +3,12 @@ from app.orchestrator.nodes.intent_parser import intent_parser_node
 from app.orchestrator.nodes.lesson_generator import lesson_generator_node
 from app.orchestrator.nodes.mastery_scorer import mastery_scorer_node
 from app.orchestrator.nodes.prerequisite_graph import prerequisite_graph_node
+from app.orchestrator.nodes.protege_persona import protege_persona_node
 from app.orchestrator.nodes.quiz_reexplain import quiz_reexplain_node
 from app.orchestrator.nodes.snap_a_problem import snap_a_problem_node
 from app.orchestrator.nodes.stream_result import stream_result_node
 from app.orchestrator.nodes.tutor_matcher import tutor_matcher_node
+from app.orchestrator.nodes.understanding_scorer import understanding_scorer_node
 from app.orchestrator.nodes.video_curator import video_curator_node
 
 __all__ = [
@@ -20,4 +22,6 @@ __all__ = [
     "tutor_matcher_node",
     "mastery_scorer_node",
     "stream_result_node",
+    "protege_persona_node",
+    "understanding_scorer_node",
 ]

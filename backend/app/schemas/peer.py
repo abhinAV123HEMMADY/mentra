@@ -19,6 +19,7 @@ class QnaPostRequest(BaseModel):
     topic_id: str
     author_id: str
     body: str
+    source: str = "learner"  # learner|protege_explanation
 
 
 class VisibilityUpdate(BaseModel):

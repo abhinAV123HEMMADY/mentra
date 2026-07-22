@@ -74,6 +74,26 @@ export interface SquadProposal {
   member_ids: string[];
 }
 
+export interface ChecklistItem {
+  id: string;
+  sub_concept: string;
+  covered: boolean;
+}
+
+export interface ProtegeTurnResult {
+  session_id: string;
+  persona_message: string;
+  understanding_score: number;
+  checklist: ChecklistItem[];
+  resolved_misconceptions: string[];
+  status: "active" | "completed" | "published";
+}
+
+export interface ChatMessage {
+  role: "persona" | "learner";
+  content: string;
+}
+
 export type MasteryStatus = "mastered" | "decaying" | "gap" | "weak" | "untouched";
 
 export interface MasteryNode {

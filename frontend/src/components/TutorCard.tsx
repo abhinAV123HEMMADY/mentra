@@ -14,7 +14,7 @@ export default function TutorCard({ tutor, onBook }: { tutor: TutorResult; onBoo
       <div className="row" style={{ gap: 12 }}>
         <span
           className="avatar"
-          style={{ background: "linear-gradient(135deg, var(--primary), hsl(208 80% 66%))" }}
+          style={{ background: "linear-gradient(135deg, var(--primary), var(--primary-2))" }}
         >
           {tutor.name.charAt(0)}
         </span>

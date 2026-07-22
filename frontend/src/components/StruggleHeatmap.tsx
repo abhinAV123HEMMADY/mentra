@@ -1,10 +1,10 @@
 import type { StruggleFeedItem } from "../types";
 
 const GRADIENTS = [
-  "linear-gradient(135deg, hsl(258 80% 70%), hsl(208 80% 68%))",
-  "linear-gradient(135deg, hsl(152 60% 60%), hsl(180 60% 60%))",
-  "linear-gradient(135deg, hsl(28 85% 68%), hsl(349 78% 70%))",
-  "linear-gradient(135deg, hsl(208 80% 68%), hsl(258 80% 72%))",
+  "linear-gradient(135deg, var(--accent), var(--accent-bright))",
+  "linear-gradient(135deg, var(--sage), hsl(152 45% 45%))",
+  "linear-gradient(135deg, var(--amber), var(--accent-2))",
+  "linear-gradient(135deg, var(--accent-2), var(--accent))",
 ];
 
 export default function StruggleHeatmap({ items }: { items: StruggleFeedItem[] }) {

@@ -30,7 +30,7 @@ async def create_qna_post(req: QnaPostRequest, db: AsyncSession = Depends(get_db
     status = moderate_text(req.body)
     post = QnaPost(
         id=str(uuid.uuid4()), topic_id=req.topic_id, author_id=req.author_id, body=req.body,
-        moderation_status=status,
+        moderation_status=status, source=req.source,
     )
     db.add(post)
     await db.commit()

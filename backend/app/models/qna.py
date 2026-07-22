@@ -15,6 +15,7 @@ class QnaPost(Base):
     author_id: Mapped[str] = mapped_column(String, ForeignKey("users.id"))
     body: Mapped[str] = mapped_column(String)
     moderation_status: Mapped[str] = mapped_column(String, default="pending")  # pending|approved|rejected
+    source: Mapped[str] = mapped_column(String, default="learner")  # learner|protege_explanation
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 

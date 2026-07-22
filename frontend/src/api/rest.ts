@@ -1,4 +1,4 @@
-import type { MasteryGraph, SquadProposal, StruggleFeedItem, TutorResult } from "../types";
+import type { MasteryGraph, ProtegeTurnResult, SquadProposal, StruggleFeedItem, TutorResult } from "../types";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
@@ -126,4 +126,19 @@ export function postQna(topicId: string, authorId: string, body: string) {
     author_id: authorId,
     body,
   });
+}
+
+export function startProtege(topicId: string, learnerId: string) {
+  return postJson<ProtegeTurnResult>("/protege/start", { topic_id: topicId, learner_id: learnerId });
+}
+
+export function sendProtegeTurn(sessionId: string, learnerExplanation: string) {
+  return postJson<ProtegeTurnResult>("/protege/turn", {
+    session_id: sessionId,
+    learner_explanation: learnerExplanation,
+  });
+}
+
+export function publishProtegeExplanation(sessionId: string) {
+  return postJson<{ id: string; moderation_status: string }>("/protege/publish", { session_id: sessionId });
 }

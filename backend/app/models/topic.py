@@ -1,7 +1,7 @@
 import uuid
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import ForeignKey, JSON, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -16,6 +16,9 @@ class Topic(Base):
     name: Mapped[str] = mapped_column(String)
     subject: Mapped[str] = mapped_column(String)
     content_embedding: Mapped[list[float] | None] = mapped_column(Vector(EMBEDDING_DIM), nullable=True)
+    # [{id, sub_concept, misconception_prompt, keywords}] — feeds Protégé Mode's persona
+    # (Section 9); null/empty means the topic can't drive Protégé Mode yet.
+    common_misconceptions: Mapped[list | None] = mapped_column(JSON, nullable=True)
 
 
 class PrerequisiteEdge(Base):

@@ -1,10 +1,11 @@
 import { NavLink, Route, HashRouter as Router, Routes, useLocation } from "react-router-dom";
 import { LearnerProvider, useLearner } from "./LearnerContext";
 import { ThemeProvider, useTheme } from "./theme";
-import { LearnIcon, MapIcon, MoonIcon, PeerIcon, SunIcon, TutorIcon } from "./components/Icons";
+import { ChatIcon, LearnIcon, MapIcon, MoonIcon, PeerIcon, SunIcon, TutorIcon } from "./components/Icons";
 import LearningPipeline from "./pages/LearningPipeline";
 import MasteryMap from "./pages/MasteryMap";
 import PeerFeed from "./pages/PeerFeed";
+import ProtegeMode from "./pages/ProtegeMode";
 import TutorHub from "./pages/TutorHub";
 
 const LEARNERS = ["u_amy", "u_ben", "u_cara", "u_dev", "u_ella"];
@@ -43,6 +44,7 @@ function AnimatedRoutes() {
       <Routes location={location}>
         <Route path="/" element={<LearningPipeline />} />
         <Route path="/map" element={<MasteryMap />} />
+        <Route path="/protege" element={<ProtegeMode />} />
         <Route path="/peer" element={<PeerFeed />} />
         <Route path="/tutors" element={<TutorHub />} />
       </Routes>
@@ -83,6 +85,10 @@ export default function App() {
               <NavLink to="/map" className={tabClass}>
                 <MapIcon />
                 Map
+              </NavLink>
+              <NavLink to="/protege" className={tabClass}>
+                <ChatIcon />
+                Teach
               </NavLink>
               <NavLink to="/peer" className={tabClass}>
                 <PeerIcon />

@@ -131,7 +131,7 @@ export default function LearningPipeline() {
               <div key={t.id} className="link-row" style={{ cursor: "default" }}>
                 <span
                   className="avatar"
-                  style={{ background: "linear-gradient(135deg, var(--primary), hsl(28 85% 66%))" }}
+                  style={{ background: "linear-gradient(135deg, var(--primary), var(--primary-2))" }}
                 >
                   {t.name.charAt(0)}
                 </span>

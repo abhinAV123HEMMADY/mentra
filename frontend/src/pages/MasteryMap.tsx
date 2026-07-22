@@ -133,7 +133,7 @@ export default function MasteryMap() {
                 <span>SOLID</span>
               </div>
               <div className="stat-tile">
-                <b style={{ color: "hsl(30 88% 60%)" }}>{graph.summary.decaying}</b>
+                <b style={{ color: "var(--decaying)" }}>{graph.summary.decaying}</b>
                 <span>DECAYING</span>
               </div>
               <div className="stat-tile">
@@ -152,7 +152,7 @@ export default function MasteryMap() {
 
           <div className="row" style={{ justifyContent: "center", gap: 14, padding: "12px 0 0" }}>
             <Legend color="var(--ontrack)" label="Solid" />
-            <Legend color="hsl(30 88% 62%)" label="Decaying" />
+            <Legend color="var(--decaying)" label="Decaying" />
             <Legend color="var(--struggling)" label="Gap" />
             <Legend color="var(--border)" label="Untouched" />
           </div>

@@ -129,3 +129,12 @@ export function PlayIcon({ size = 16, className }: IconProps) {
     </svg>
   );
 }
+
+export function ChatIcon({ size = 22, className }: IconProps) {
+  return (
+    <svg {...base(size, className)}>
+      <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8A2.5 2.5 0 0 1 17.5 16H10l-4.5 4v-4H6.5A2.5 2.5 0 0 1 4 13.5Z" />
+      <path d="M8 8.5h8M8 11.5h5" />
+    </svg>
+  );
+}

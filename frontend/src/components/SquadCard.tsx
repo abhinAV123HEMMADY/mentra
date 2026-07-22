@@ -1,5 +1,12 @@
 import type { SquadProposal } from "../types";
 
+const AVATAR_GRADIENTS = [
+  "linear-gradient(135deg, var(--accent), var(--accent-bright))",
+  "linear-gradient(135deg, var(--sage), hsl(152 45% 45%))",
+  "linear-gradient(135deg, var(--accent-2), var(--accent))",
+  "linear-gradient(135deg, var(--amber), var(--sage))",
+];
+
 export default function SquadCard({ squad }: { squad: SquadProposal }) {
   return (
     <div className="card" style={{ marginBottom: 12 }}>
@@ -18,9 +25,7 @@ export default function SquadCard({ squad }: { squad: SquadProposal }) {
             style={{
               marginLeft: i === 0 ? 0 : -12,
               border: "2px solid var(--surface)",
-              background: `linear-gradient(135deg, hsl(${(i * 60 + 240) % 360} 70% 66%), hsl(${
-                (i * 60 + 300) % 360
-              } 70% 66%))`,
+              background: AVATAR_GRADIENTS[i % AVATAR_GRADIENTS.length],
               fontSize: 13,
               width: 34,
               height: 34,
