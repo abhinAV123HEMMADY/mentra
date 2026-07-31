@@ -33,15 +33,17 @@ def build_graph():
     graph.add_node("mastery_scorer", mastery_scorer_node)
     graph.add_node("stream_result", stream_result_node)
 
-    graph.add_edge(START, "intent_parser")
-
+    # Photo sessions run vision first: Snap-a-Problem turns the image into a diagnosed
+    # concept, and THEN the intent parser derives objectives from that concept — the reverse
+    # order would parse objectives from a base64 blob and never see the diagnosis.
     graph.add_conditional_edges(
-        "intent_parser",
+        START,
         route_by_input_mode,
-        {"photo": "snap_a_problem", "text": "prerequisite_graph"},
+        {"photo": "snap_a_problem", "text": "intent_parser"},
     )
 
-    graph.add_edge("snap_a_problem", "prerequisite_graph")
+    graph.add_edge("snap_a_problem", "intent_parser")
+    graph.add_edge("intent_parser", "prerequisite_graph")
     graph.add_edge("prerequisite_graph", "lesson_generator")
     graph.add_edge("lesson_generator", "quiz_agent")
     graph.add_edge("quiz_agent", "flashcard_agent")

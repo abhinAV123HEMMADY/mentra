@@ -45,6 +45,38 @@ export interface TutorResult {
   relevance: number;
 }
 
+export interface ErrorStep {
+  text: string;
+  correct: boolean;
+  note?: string;
+}
+
+export interface ErrorAnalysis {
+  problem_statement: string;
+  steps: ErrorStep[];
+  first_error_step: number;
+  error_explanation: string;
+  tested_concept: string;
+  prerequisite_concept: string;
+  prerequisite_topic_id: string | null;
+}
+
+export interface ExamPlan {
+  days_until_exam: number;
+  curve_baseline: number[];
+  curve_exam_aware: number[];
+  exam_day: {
+    baseline: number;
+    exam_aware: number;
+    cards_at_risk_baseline: number;
+    cards_at_risk_exam_aware: number;
+  };
+  plan: { front: string; review_days: number[]; projected_exam_retrievability: number }[];
+  daily_load: number[];
+  demo_deck?: boolean;
+  card_count?: number;
+}
+
 export interface PipelineUpdate {
   node: string;
   update: Record<string, unknown>;
@@ -58,6 +90,7 @@ export interface LearningSessionData {
   tutor_matches?: TutorResult[];
   mastery_score?: number;
   prerequisite_gap?: string | null;
+  error_analysis?: ErrorAnalysis | null;
   done: boolean;
 }
 

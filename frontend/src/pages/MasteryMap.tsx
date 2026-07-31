@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getMasteryGraph } from "../api/rest";
+import ExamPlanner from "../components/ExamPlanner";
 import MasteryGraph from "../components/MasteryGraph";
 import { ArrowIcon, CloseIcon, SparkleIcon } from "../components/Icons";
 import { useLearner } from "../LearnerContext";
@@ -150,12 +151,14 @@ export default function MasteryMap() {
             onSelect={setSelected}
           />
 
-          <div className="row" style={{ justifyContent: "center", gap: 14, padding: "12px 0 0" }}>
+          <div className="row" style={{ justifyContent: "center", gap: 14, padding: "12px 0 12px" }}>
             <Legend color="var(--ontrack)" label="Solid" />
             <Legend color="var(--decaying)" label="Decaying" />
             <Legend color="var(--struggling)" label="Gap" />
             <Legend color="var(--border)" label="Untouched" />
           </div>
+
+          <ExamPlanner learnerId={learnerId} />
         </>
       )}
 

@@ -38,6 +38,20 @@ async def prerequisite_graph_node(state: LearningState) -> dict:
 
     prerequisite_gap = None
 
+    # A localized error from a snapped photo is a stronger signal than graph traversal:
+    # the vision diagnosis names the exact prerequisite the mistake revealed, so redirect
+    # straight to it rather than to the nearest upstream node below threshold.
+    diagnosed_id = (state.get("error_analysis") or {}).get("prerequisite_topic_id")
+    if diagnosed_id and diagnosed_id != topic_id:
+        async with async_session() as db:
+            diagnosed = await db.get(Topic, diagnosed_id)
+        if diagnosed is not None:
+            objectives["topic_id"] = diagnosed.id
+            objectives["topic_name"] = diagnosed.name
+            objectives["subject"] = diagnosed.subject
+            objectives["blocked_on_gap"] = topic_id
+            return {"parsed_objectives": objectives, "prerequisite_gap": diagnosed.id}
+
     async with async_session() as db:
         for prereq in await _upstream_of(db, topic_id):
             mastery = await _get_mastery(db, learner_id, prereq.id)

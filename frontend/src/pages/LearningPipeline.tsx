@@ -1,6 +1,8 @@
 import { useRef, useState } from "react";
 import { subscribeToSession } from "../api/ws";
 import { startLearning } from "../api/rest";
+import { runDemoPipeline } from "../api/demo";
+import ErrorAnalysisCard from "../components/ErrorAnalysisCard";
 import Flashcards from "../components/Flashcards";
 import Lesson from "../components/Lesson";
 import Quiz from "../components/Quiz";
@@ -33,8 +35,13 @@ export default function LearningPipeline() {
     setData(emptyData);
     setRunning(true);
 
-    const { session_id } = await startLearning(learnerId, topic, mode);
-    cleanupRef.current = subscribeToSession(session_id, handleUpdate);
+    try {
+      const { session_id } = await startLearning(learnerId, topic, mode);
+      cleanupRef.current = subscribeToSession(session_id, handleUpdate);
+    } catch {
+      // Backend unreachable (e.g. static deploy) — simulate the stream client-side.
+      cleanupRef.current = runDemoPipeline(topic, mode, handleUpdate);
+    }
   };
 
   const stepDone = [
@@ -72,6 +79,8 @@ export default function LearningPipeline() {
           </div>
         </div>
       )}
+
+      {data.error_analysis && <ErrorAnalysisCard analysis={data.error_analysis} />}
 
       {data.prerequisite_gap && (
         <div

@@ -1,6 +1,17 @@
-import type { MasteryGraph, ProtegeTurnResult, SquadProposal, StruggleFeedItem, TutorResult } from "../types";
+import type { ExamPlan, MasteryGraph, ProtegeTurnResult, SquadProposal, StruggleFeedItem, TutorResult } from "../types";
+import { demoDeck, planForExam } from "./examPlan";
+import {
+  DEMO_SQUADS,
+  DEMO_STRUGGLE_FEED,
+  DEMO_TUTORS,
+  demoProtegeTurn,
+  demoStartProtege,
+} from "./demo";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
+
+// Every endpoint falls back to the client-side demo layer (demo.ts / examPlan.ts) when the
+// backend isn't reachable, so a static deploy of just this frontend demos every feature.
 
 async function postJson<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
@@ -8,10 +19,19 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
+  if (!res.ok) throw new Error(`${path}: ${res.status}`);
+  return res.json() as Promise<T>;
+}
+
+async function getJson<T>(path: string): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`);
+  if (!res.ok) throw new Error(`${path}: ${res.status}`);
   return res.json() as Promise<T>;
 }
 
 export function startLearning(learnerId: string, topicInput: string, inputMode: "text" | "photo") {
+  // No fallback here — LearningPipeline handles offline mode itself so it can simulate the
+  // streaming updates, not just the initial POST.
   return postJson<{ session_id: string; status: string }>("/learn", {
     learner_id: learnerId,
     topic_input: topicInput,
@@ -19,16 +39,31 @@ export function startLearning(learnerId: string, topicInput: string, inputMode: 
   });
 }
 
-export function submitConfidence(cardId: string, learnerId: string, rating: number, recalled: boolean) {
-  return postJson<{ status: string; next_due_days: number }>("/learn/confidence", {
-    card_id: cardId,
-    learner_id: learnerId,
-    rating,
-    recalled,
-  });
+export async function submitConfidence(cardId: string, learnerId: string, rating: number, recalled: boolean) {
+  try {
+    return await postJson<{ status: string; next_due_days: number }>("/learn/confidence", {
+      card_id: cardId,
+      learner_id: learnerId,
+      rating,
+      recalled,
+    });
+  } catch {
+    return { status: "ok", next_due_days: recalled ? Math.max(1, rating * 2) : 1 };
+  }
 }
 
-export function searchTutors(payload: {
+export async function getExamPlan(learnerId: string, daysUntilExam: number): Promise<ExamPlan> {
+  try {
+    return await postJson<ExamPlan>("/exam/plan", {
+      learner_id: learnerId,
+      days_until_exam: daysUntilExam,
+    });
+  } catch {
+    return planForExam(demoDeck(), daysUntilExam);
+  }
+}
+
+export async function searchTutors(payload: {
   subject: string;
   topic_query: string;
   location_lat?: number;
@@ -37,38 +72,64 @@ export function searchTutors(payload: {
   price_max?: number;
   session_format?: string;
   verification_tier?: string;
-}) {
-  return postJson<TutorResult[]>("/tutors/search", payload);
+}): Promise<TutorResult[]> {
+  try {
+    return await postJson<TutorResult[]>("/tutors/search", payload);
+  } catch {
+    return DEMO_TUTORS.filter(
+      (t) =>
+        (payload.price_max == null || t.price_per_hour <= payload.price_max) &&
+        (!payload.session_format || t.session_format === payload.session_format || t.session_format === "both") &&
+        (!payload.verification_tier || t.verification_tier === payload.verification_tier),
+    );
+  }
 }
 
-export function bookTutor(tutorId: string, learnerId: string, slotStart: string) {
-  return postJson<{ status: string; booking_id: string | null }>("/tutors/book", {
-    tutor_id: tutorId,
-    learner_id: learnerId,
-    slot_start: slotStart,
-  });
+export async function bookTutor(tutorId: string, learnerId: string, slotStart: string) {
+  try {
+    return await postJson<{ status: string; booking_id: string | null }>("/tutors/book", {
+      tutor_id: tutorId,
+      learner_id: learnerId,
+      slot_start: slotStart,
+    });
+  } catch {
+    return { status: "confirmed", booking_id: `demo-${tutorId}` };
+  }
 }
 
 export async function getTutorAvailability(tutorId: string, week: string) {
-  const res = await fetch(`${API_BASE}/tutors/${tutorId}/availability?week=${encodeURIComponent(week)}`);
-  return res.json() as Promise<string[]>;
+  try {
+    return await getJson<string[]>(`/tutors/${tutorId}/availability?week=${encodeURIComponent(week)}`);
+  } catch {
+    const base = new Date(week || Date.now());
+    return [10, 14, 16].map((h) => {
+      const d = new Date(base);
+      d.setDate(d.getDate() + 1);
+      d.setHours(h, 0, 0, 0);
+      return d.toISOString();
+    });
+  }
 }
 
-export async function getStruggleFeed(userId: string) {
-  const res = await fetch(`${API_BASE}/peer/feed/${userId}`);
-  return res.json() as Promise<StruggleFeedItem[]>;
+export async function getStruggleFeed(userId: string): Promise<StruggleFeedItem[]> {
+  try {
+    return await getJson<StruggleFeedItem[]>(`/peer/feed/${userId}`);
+  } catch {
+    return DEMO_STRUGGLE_FEED.filter((i) => i.user_id !== userId);
+  }
 }
 
-export async function getSquadProposals(topicId: string) {
-  const res = await fetch(`${API_BASE}/peer/squads/${topicId}`);
-  return res.json() as Promise<SquadProposal[]>;
+export async function getSquadProposals(topicId: string): Promise<SquadProposal[]> {
+  try {
+    return await getJson<SquadProposal[]>(`/peer/squads/${topicId}`);
+  } catch {
+    return DEMO_SQUADS.filter((s) => s.topic_id === topicId);
+  }
 }
 
 export async function getMasteryGraph(userId: string): Promise<MasteryGraph> {
   try {
-    const res = await fetch(`${API_BASE}/mastery/graph/${userId}`);
-    if (!res.ok) throw new Error(String(res.status));
-    return (await res.json()) as MasteryGraph;
+    return await getJson<MasteryGraph>(`/mastery/graph/${userId}`);
   } catch {
     // Fallback so the map always demos even without the backend running.
     return demoMasteryGraph(userId);
@@ -120,25 +181,41 @@ function demoMasteryGraph(userId: string): MasteryGraph {
   return { nodes, edges, summary };
 }
 
-export function postQna(topicId: string, authorId: string, body: string) {
-  return postJson<{ id: string; moderation_status: string }>("/peer/qna", {
-    topic_id: topicId,
-    author_id: authorId,
-    body,
-  });
+export async function postQna(topicId: string, authorId: string, body: string) {
+  try {
+    return await postJson<{ id: string; moderation_status: string }>("/peer/qna", {
+      topic_id: topicId,
+      author_id: authorId,
+      body,
+    });
+  } catch {
+    return { id: "demo-qna", moderation_status: "approved" };
+  }
 }
 
-export function startProtege(topicId: string, learnerId: string) {
-  return postJson<ProtegeTurnResult>("/protege/start", { topic_id: topicId, learner_id: learnerId });
+export async function startProtege(topicId: string, learnerId: string): Promise<ProtegeTurnResult> {
+  try {
+    return await postJson<ProtegeTurnResult>("/protege/start", { topic_id: topicId, learner_id: learnerId });
+  } catch {
+    return demoStartProtege();
+  }
 }
 
-export function sendProtegeTurn(sessionId: string, learnerExplanation: string) {
-  return postJson<ProtegeTurnResult>("/protege/turn", {
-    session_id: sessionId,
-    learner_explanation: learnerExplanation,
-  });
+export async function sendProtegeTurn(sessionId: string, learnerExplanation: string): Promise<ProtegeTurnResult> {
+  try {
+    return await postJson<ProtegeTurnResult>("/protege/turn", {
+      session_id: sessionId,
+      learner_explanation: learnerExplanation,
+    });
+  } catch {
+    return demoProtegeTurn(sessionId, learnerExplanation);
+  }
 }
 
-export function publishProtegeExplanation(sessionId: string) {
-  return postJson<{ id: string; moderation_status: string }>("/protege/publish", { session_id: sessionId });
+export async function publishProtegeExplanation(sessionId: string) {
+  try {
+    return await postJson<{ id: string; moderation_status: string }>("/protege/publish", { session_id: sessionId });
+  } catch {
+    return { id: `demo-${sessionId}`, moderation_status: "approved" };
+  }
 }

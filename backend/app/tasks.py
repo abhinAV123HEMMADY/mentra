@@ -18,6 +18,7 @@ async def _run_pipeline(session_id: str, learner_id: str, topic_input: str, inpu
         "session_id": session_id,
         "parsed_objectives": {},
         "prerequisite_gap": None,
+        "error_analysis": None,
         "lesson": {},
         "quiz": [],
         "flashcards": [],

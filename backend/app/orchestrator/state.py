@@ -8,6 +8,7 @@ class LearningState(TypedDict):
     session_id: str
     parsed_objectives: dict
     prerequisite_gap: str | None  # traced upstream concept, if any
+    error_analysis: dict | None  # Snap-a-Problem error-step localization result
     lesson: dict
     quiz: list                   # [{question, answer, modality_attempts}]
     flashcards: list             # [{front, back, stability, difficulty, due_date}]
