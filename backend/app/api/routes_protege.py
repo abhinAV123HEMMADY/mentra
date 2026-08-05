@@ -8,10 +8,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import get_db
+from app.llm import llm_enabled
 from app.mastery.service import recompute_mastery
 from app.models import ProtegeSession, QnaPost, Topic
 from app.moderation.service import moderate_text
-from app.orchestrator.nodes.misconception_generator import generate_misconceptions
+from app.orchestrator.nodes.misconception_generator import generate_misconceptions, is_generic_set
 from app.orchestrator.nodes.protege_persona import protege_persona_node
 from app.orchestrator.protege_graph import protege_graph
 from app.realtime import channel_name
@@ -39,7 +40,10 @@ async def _resolve_topic(db: AsyncSession, topic_name: str) -> Topic:
         db.add(topic)
         await db.flush()
 
-    if not topic.common_misconceptions:
+    # Regenerate when empty — and also when the cached set is the keyless generic template
+    # but a live LLM is now available, so topics first touched before the key was configured
+    # heal into real, topic-specific misconceptions.
+    if not topic.common_misconceptions or (llm_enabled() and is_generic_set(topic.common_misconceptions)):
         topic.common_misconceptions = await generate_misconceptions(topic.name, topic.subject)
         await db.flush()
 

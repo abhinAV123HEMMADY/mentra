@@ -1,7 +1,11 @@
 import type { ExamPlan, MasteryGraph, MentraUser, ProtegeTurnResult, SquadProposal, StruggleFeedItem, TutorResult } from "../types";
 import { DEMO_TUTORS } from "./demo";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
+// Production builds default to the hosted backend so a static deploy works without any
+// dashboard env config; VITE_API_BASE_URL still overrides when set.
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL ??
+  (import.meta.env.PROD ? "https://mentra-backend-mats.onrender.com" : "http://localhost:8000");
 
 // Only tutor search/booking falls back to canned data (there's no real tutor marketplace to
 // query) — every other endpoint reflects real backend state or fails loudly. No client-side

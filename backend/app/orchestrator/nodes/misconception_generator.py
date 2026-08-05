@@ -62,6 +62,17 @@ _SYSTEM = (
 )
 
 
+_GENERIC_IDS = {"purpose", "mechanism", "common-mistake", "when-it-applies"}
+
+
+def is_generic_set(misconceptions: list[dict] | None) -> bool:
+    """True when a topic's cached misconceptions are the keyless fallback template — used to
+    regenerate them once a live LLM becomes available."""
+    if not misconceptions:
+        return True
+    return {m.get("id") for m in misconceptions} <= _GENERIC_IDS
+
+
 def _generic_misconceptions(topic_name: str) -> list[dict]:
     return [
         {
