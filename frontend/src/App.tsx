@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NavLink, Route, HashRouter as Router, Routes, useLocation } from "react-router-dom";
 import { createUser, listUsers } from "./api/rest";
 import { LearnerProvider, useLearner } from "./LearnerContext";
@@ -24,6 +24,18 @@ function NewProfileSheet({
   const [grade, setGrade] = useState("");
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
+  const nameRef = useRef<HTMLInputElement | null>(null);
+
+  // autoFocus inside an animating fixed overlay makes the browser scroll the page behind
+  // the dialog to the top — focus manually with preventScroll instead.
+  useEffect(() => {
+    nameRef.current?.focus({ preventScroll: true });
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   const submit = async () => {
     if (!name.trim() || busy) return;
@@ -38,10 +50,15 @@ function NewProfileSheet({
   };
 
   return (
-    <div className="scrim" onClick={onClose}>
-      <div className="sheet" onClick={(e) => e.stopPropagation()}>
-        <div className="sheet-grip" />
-        <div className="row" style={{ justifyContent: "space-between", marginBottom: 8 }}>
+    <div className="scrim center" onClick={onClose}>
+      <div
+        className="sheet dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Create a new profile"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="row" style={{ justifyContent: "space-between", margin: "8px 0" }}>
           <div>
             <span className="eyebrow">New profile</span>
             <h3 style={{ margin: "4px 0 0" }}>Start from zero</h3>
@@ -56,10 +73,10 @@ function NewProfileSheet({
         </p>
         <div className="stack">
           <input
+            ref={nameRef}
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Your name"
-            autoFocus
             onKeyDown={(e) => {
               if (e.key === "Enter") submit();
             }}

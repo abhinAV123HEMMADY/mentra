@@ -1160,6 +1160,19 @@ button.sm {
   margin: 6px auto 16px;
 }
 
+/* centered dialog variant — for flows launched from the header (e.g. new profile), where a
+   bottom-anchored sheet would sit far from the trigger */
+.scrim.center {
+  align-items: center;
+  padding: 20px;
+}
+.sheet.dialog {
+  border-radius: 26px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 24px;
+  animation: pop 0.32s var(--ease-out);
+}
+
 /* skeleton shimmer */
 .skeleton {
   border-radius: var(--r-md);
