@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     database_url_sync: str = "postgresql+psycopg://mentra:mentra@localhost:5433/mentra"
     redis_url: str = "redis://localhost:6380/0"
 
-    anthropic_api_key: str = ""
+    openai_api_key: str = ""
 
     video_mcp_url: str = "http://localhost:8101/mcp"
     tutor_mcp_url: str = "http://localhost:8102/mcp"

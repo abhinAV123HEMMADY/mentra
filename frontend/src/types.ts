@@ -9,10 +9,14 @@ export interface LessonContent {
 export interface QuizQuestion {
   question: string;
   answer: string;
-  correct: boolean;
-  modality_attempts: string[];
-  reexplanations: Record<string, unknown>;
-  needs_video: boolean;
+  // Escalation ladder shown only after the learner misses: analogy → diagram → video.
+  reexplanations: { analogy?: string; diagram?: string; video?: VideoResult };
+}
+
+export interface MentraUser {
+  id: string;
+  name: string;
+  grade_level: string | null;
 }
 
 export interface Flashcard {
@@ -88,7 +92,6 @@ export interface LearningSessionData {
   flashcards?: Flashcard[];
   videos?: VideoResult[];
   tutor_matches?: TutorResult[];
-  mastery_score?: number;
   prerequisite_gap?: string | null;
   error_analysis?: ErrorAnalysis | null;
   done: boolean;
@@ -115,6 +118,7 @@ export interface ChecklistItem {
 
 export interface ProtegeTurnResult {
   session_id: string;
+  topic_name: string;
   persona_message: string;
   understanding_score: number;
   checklist: ChecklistItem[];

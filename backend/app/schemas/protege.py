@@ -8,7 +8,7 @@ class ChecklistItem(BaseModel):
 
 
 class ProtegeStartRequest(BaseModel):
-    topic_id: str
+    topic_name: str
     learner_id: str
 
 
@@ -23,6 +23,7 @@ class ProtegePublishRequest(BaseModel):
 
 class ProtegeTurnResult(BaseModel):
     session_id: str
+    topic_name: str
     persona_message: str
     understanding_score: float
     checklist: list[ChecklistItem]

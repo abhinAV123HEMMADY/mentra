@@ -17,3 +17,10 @@ class ConfidenceSubmission(BaseModel):
     learner_id: str
     rating: int  # 0-5
     recalled: bool
+
+
+class QuizAnswerSubmission(BaseModel):
+    lesson_id: str
+    question: str
+    correct: bool  # learner-graded after revealing the answer
+    modality_used: str | None = None  # deepest re-explanation tier used: analogy|diagram|video

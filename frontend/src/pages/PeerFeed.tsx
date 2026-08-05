@@ -10,19 +10,31 @@ export default function PeerFeed() {
   const { learnerId } = useLearner();
   const [feed, setFeed] = useState<StruggleFeedItem[]>([]);
   const [squads, setSquads] = useState<SquadProposal[]>([]);
+  const [loadError, setLoadError] = useState(false);
   const [qnaBody, setQnaBody] = useState("");
   const [qnaStatus, setQnaStatus] = useState<string | null>(null);
+  const [qnaError, setQnaError] = useState(false);
 
   useEffect(() => {
-    getStruggleFeed(learnerId).then(setFeed);
-    getSquadProposals("derivatives").then(setSquads);
+    setLoadError(false);
+    Promise.all([getStruggleFeed(learnerId), getSquadProposals("derivatives")])
+      .then(([feedRes, squadsRes]) => {
+        setFeed(feedRes);
+        setSquads(squadsRes);
+      })
+      .catch(() => setLoadError(true));
   }, [learnerId]);
 
   const submitQna = async () => {
     if (!qnaBody.trim()) return;
-    const res = await postQna("derivatives", learnerId, qnaBody.trim());
-    setQnaStatus(res.moderation_status);
-    setQnaBody("");
+    setQnaError(false);
+    try {
+      const res = await postQna("derivatives", learnerId, qnaBody.trim());
+      setQnaStatus(res.moderation_status);
+      setQnaBody("");
+    } catch {
+      setQnaError(true);
+    }
   };
 
   return (
@@ -31,6 +43,13 @@ export default function PeerFeed() {
         <span className="eyebrow">Peer Insight</span>
         <h2>You're not the only one stuck</h2>
       </div>
+
+      {loadError && (
+        <div className="card animate-in" style={{ borderColor: "var(--struggling)" }}>
+          <span className="tag struggling">Couldn't load the peer feed</span>
+          <p style={{ margin: "8px 0 0" }}>Make sure the backend is running, then reload this page.</p>
+        </div>
+      )}
 
       <section>
         <div className="row" style={{ justifyContent: "space-between", padding: "0 2px 8px" }}>
@@ -71,6 +90,11 @@ export default function PeerFeed() {
               Post to feed <ArrowIcon size={16} />
             </button>
           </div>
+          {qnaError && (
+            <p className="faint" style={{ marginBottom: 0, marginTop: 12 }}>
+              Couldn't post — check the backend and try again.
+            </p>
+          )}
           {qnaStatus && (
             <p className="faint" style={{ marginBottom: 0, marginTop: 12 }}>
               <CheckIcon size={13} className="muted" /> Moderation: {qnaStatus} — screened before

@@ -1,13 +1,11 @@
 """Quiz + Re-explanation Agent (Section 4.5).
 
-The modality-escalation order is real and deterministic: analogy, then diagram, then video.
-Analogies are cheapest to generate and often enough; diagrams help spatial learners; video
-is the most expensive fallback, so it's tried last.
-
-Live path: Claude writes the quiz and the analogy/diagram re-explanations in one forced-tool
-call. To demonstrate the escalation end-to-end without interactive input, the first question
-is seeded as a simulated miss and walked through analogy -> diagram; the video slot is filled
-in later by the Video Curator node via `needs_video` — same convention as the stub.
+The quiz is generated WITHOUT any answer outcomes — correctness only ever comes from the
+learner actually answering and self-grading in the UI (POST /learn/quiz-answer), which is
+what feeds real quiz accuracy into mastery. Each question ships with an analogy and a
+diagram re-explanation so a genuine miss walks the modality-escalation ladder: analogy,
+then diagram, then video. Analogies are cheapest and often enough; diagrams help spatial
+learners; video is the most expensive fallback, so it's tried last.
 """
 
 from app.llm import forced_tool_call
@@ -26,7 +24,7 @@ def next_modality(modality_attempts: list[str]) -> str | None:
 
 _QUIZ_TOOL = {
     "name": "write_quiz",
-    "description": "Write the quiz and the re-explanations for the first question.",
+    "description": "Write the quiz, with per-question re-explanations for learners who miss it.",
     "input_schema": {
         "type": "object",
         "properties": {
@@ -39,37 +37,29 @@ _QUIZ_TOOL = {
                     "properties": {
                         "question": {"type": "string"},
                         "answer": {"type": "string", "description": "The full correct answer, concise."},
+                        "analogy": {
+                            "type": "string",
+                            "description": "Re-explains this question's concept through a concrete real-world analogy.",
+                        },
+                        "diagram": {
+                            "type": "string",
+                            "description": "Re-explains it spatially: a compact text/ASCII diagram with a one-line caption.",
+                        },
                     },
-                    "required": ["question", "answer"],
+                    "required": ["question", "answer", "analogy", "diagram"],
                 },
             },
-            "analogy": {
-                "type": "string",
-                "description": "Re-explains the first question's concept through a concrete real-world analogy.",
-            },
-            "diagram": {
-                "type": "string",
-                "description": "Re-explains it spatially: a compact text/ASCII diagram with a one-line caption.",
-            },
         },
-        "required": ["questions", "analogy", "diagram"],
+        "required": ["questions"],
     },
 }
 
 _SYSTEM = (
-    "You are writing a short comprehension quiz for a lesson the learner just read, plus two "
-    "alternative re-explanations of the first question's concept for a learner who missed it: "
-    "one analogy-based, one diagram-based. Questions must be answerable from the lesson but "
-    "not verbatim lookups. Keep everything tight and specific."
+    "You are writing a short comprehension quiz for a lesson the learner just read. For each "
+    "question also write two alternative re-explanations of its concept, shown only if the "
+    "learner misses it: one analogy-based, one diagram-based. Questions must be answerable "
+    "from the lesson but not verbatim lookups. Keep everything tight and specific."
 )
-
-
-def _stub_reexplanation(topic_name: str, modality: str) -> str:
-    if modality == "analogy":
-        return f"Think of {topic_name} like [a real-world analogy would go here]."
-    if modality == "diagram":
-        return f"[A diagram illustrating {topic_name} would render here]."
-    return f"[A video timestamp for {topic_name} is attached once the Video Curator node runs]"
 
 
 def _stub_quiz(topic_name: str) -> list[dict]:
@@ -77,21 +67,18 @@ def _stub_quiz(topic_name: str) -> list[dict]:
         {
             "question": f"What is the defining property of {topic_name}?",
             "answer": "See lesson overview.",
-            "correct": False,
-            "modality_attempts": ["analogy", "diagram"],
             "reexplanations": {
-                "analogy": _stub_reexplanation(topic_name, "analogy"),
-                "diagram": _stub_reexplanation(topic_name, "diagram"),
+                "analogy": f"Think of {topic_name} like [a real-world analogy would go here].",
+                "diagram": f"[A diagram illustrating {topic_name} would render here].",
             },
-            "needs_video": True,
         },
         {
             "question": f"Apply {topic_name} to a simple worked example.",
             "answer": "See worked examples.",
-            "correct": True,
-            "modality_attempts": [],
-            "reexplanations": {},
-            "needs_video": False,
+            "reexplanations": {
+                "analogy": f"Imagine applying {topic_name} to something from daily life.",
+                "diagram": f"[A worked-example diagram for {topic_name} would render here].",
+            },
         },
     ]
 
@@ -109,22 +96,12 @@ async def quiz_reexplain_node(state: LearningState) -> dict:
     if generated is None:
         return {"quiz": _stub_quiz(topic_name)}
 
-    quiz = []
-    for i, q in enumerate(generated["questions"]):
-        first = i == 0  # seeded miss: walks the escalation ladder analogy -> diagram -> video
-        quiz.append(
-            {
-                "question": q["question"],
-                "answer": q["answer"],
-                "correct": not first,
-                "modality_attempts": ["analogy", "diagram"] if first else [],
-                "reexplanations": {
-                    "analogy": generated["analogy"],
-                    "diagram": generated["diagram"],
-                }
-                if first
-                else {},
-                "needs_video": first,
-            }
-        )
+    quiz = [
+        {
+            "question": q["question"],
+            "answer": q["answer"],
+            "reexplanations": {"analogy": q["analogy"], "diagram": q["diagram"]},
+        }
+        for q in generated["questions"]
+    ]
     return {"quiz": quiz}

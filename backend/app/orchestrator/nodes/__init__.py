@@ -1,7 +1,6 @@
 from app.orchestrator.nodes.flashcard_fsrs import flashcard_fsrs_node
 from app.orchestrator.nodes.intent_parser import intent_parser_node
 from app.orchestrator.nodes.lesson_generator import lesson_generator_node
-from app.orchestrator.nodes.mastery_scorer import mastery_scorer_node
 from app.orchestrator.nodes.prerequisite_graph import prerequisite_graph_node
 from app.orchestrator.nodes.protege_persona import protege_persona_node
 from app.orchestrator.nodes.quiz_reexplain import quiz_reexplain_node
@@ -20,7 +19,6 @@ __all__ = [
     "flashcard_fsrs_node",
     "video_curator_node",
     "tutor_matcher_node",
-    "mastery_scorer_node",
     "stream_result_node",
     "protege_persona_node",
     "understanding_scorer_node",

@@ -68,6 +68,17 @@ async def _match_topic(name: str) -> Topic | None:
         return result.scalars().first()
 
 
+async def _get_or_create_topic(topic_id: str, name: str, subject: str) -> None:
+    """An ad-hoc topic (no match in the seeded table) still needs a real row: mastery_scores,
+    lessons, and every other FK that references topics.id would otherwise fail the moment the
+    pipeline tries to persist anything against it.
+    """
+    async with async_session() as db:
+        if await db.get(Topic, topic_id) is None:
+            db.add(Topic(id=topic_id, name=name, subject=subject))
+            await db.commit()
+
+
 async def intent_parser_node(state: LearningState) -> dict:
     raw_topic = state["topic_input"].strip()
     parsed = None
@@ -85,8 +96,10 @@ async def intent_parser_node(state: LearningState) -> dict:
         topic_id, topic_name, subject = topic.id, topic.name, topic.subject
     elif parsed:
         topic_id, topic_name, subject = _slugify(parsed["topic_name"]), parsed["topic_name"], parsed["subject"]
+        await _get_or_create_topic(topic_id, topic_name, subject)
     else:
         topic_id, topic_name, subject = _slugify(raw_topic), raw_topic, "general"
+        await _get_or_create_topic(topic_id, topic_name, subject)
 
     objectives = parsed["objectives"] if parsed else _default_objectives(topic_name)
 

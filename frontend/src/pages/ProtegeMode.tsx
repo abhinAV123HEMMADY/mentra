@@ -4,15 +4,12 @@ import { ArrowIcon, ChatIcon, CheckIcon, SparkleIcon } from "../components/Icons
 import { useLearner } from "../LearnerContext";
 import type { ChatMessage, ChecklistItem } from "../types";
 
-// Only "derivatives" is seeded with common_misconceptions today — mirrors PeerFeed's
-// same hardcoded-topic demo convention rather than requiring a topics-list endpoint.
-const TOPIC_ID = "derivatives";
-const TOPIC_LABEL = "derivatives";
-
 const UNDERSTANDING_THRESHOLD = 0.75;
 
 export default function ProtegeMode() {
-  const { learnerId } = useLearner();
+  const { learnerId, lastTopic, setLastTopic } = useLearner();
+  const [topicInput, setTopicInput] = useState(lastTopic);
+  const [topicName, setTopicName] = useState(lastTopic);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
@@ -21,6 +18,7 @@ export default function ProtegeMode() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [publishStatus, setPublishStatus] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const threadEndRef = useRef<HTMLDivElement | null>(null);
 
   const scrollToEnd = () => {
@@ -28,19 +26,32 @@ export default function ProtegeMode() {
   };
 
   const start = async () => {
+    if (!topicInput.trim() || busy) return;
     setBusy(true);
+    setError(null);
     try {
-      const res = await startProtege(TOPIC_ID, learnerId);
+      const res = await startProtege(topicInput.trim(), learnerId);
       setSessionId(res.session_id);
+      setTopicName(res.topic_name);
+      setLastTopic(res.topic_name);
       setMessages([{ role: "persona", content: res.persona_message }]);
       setChecklist(res.checklist);
       setUnderstandingScore(res.understanding_score);
       setStatus("active");
       setPublishStatus(null);
       scrollToEnd();
+    } catch {
+      setError("Couldn't reach the backend — make sure it's running, then try again.");
     } finally {
       setBusy(false);
     }
+  };
+
+  const restart = () => {
+    setSessionId(null);
+    setStatus("idle");
+    setMessages([]);
+    setError(null);
   };
 
   const send = async (overrideText?: string) => {
@@ -49,6 +60,7 @@ export default function ProtegeMode() {
     setMessages((prev) => [...prev, { role: "learner", content: explanation }]);
     setInput("");
     setBusy(true);
+    setError(null);
     scrollToEnd();
     try {
       const res = await sendProtegeTurn(sessionId, explanation);
@@ -57,6 +69,8 @@ export default function ProtegeMode() {
       setUnderstandingScore(res.understanding_score);
       setStatus(res.status);
       scrollToEnd();
+    } catch {
+      setError("Couldn't reach the backend — your explanation wasn't scored. Try again.");
     } finally {
       setBusy(false);
     }
@@ -65,10 +79,13 @@ export default function ProtegeMode() {
   const publish = async () => {
     if (!sessionId) return;
     setBusy(true);
+    setError(null);
     try {
       const res = await publishProtegeExplanation(sessionId);
       setPublishStatus(res.moderation_status);
       setStatus("published");
+    } catch {
+      setError("Couldn't publish — check the backend and try again.");
     } finally {
       setBusy(false);
     }
@@ -83,8 +100,15 @@ export default function ProtegeMode() {
         <span className="eyebrow">
           <ChatIcon size={13} /> Protégé Mode
         </span>
-        <h2>Teach Mentra {TOPIC_LABEL}</h2>
+        <h2>Teach Mentra {status === "idle" ? topicInput || "…" : topicName}</h2>
       </div>
+
+      {error && (
+        <div className="card animate-in" style={{ borderColor: "var(--struggling)" }}>
+          <span className="tag struggling">Something went wrong</span>
+          <p style={{ margin: "8px 0 0" }}>{error}</p>
+        </div>
+      )}
 
       {status === "idle" && (
         <div className="card animate-in">
@@ -93,15 +117,29 @@ export default function ProtegeMode() {
           </span>
           <h3 style={{ marginTop: 8 }}>Mentra plays a confused student</h3>
           <p className="muted" style={{ marginTop: 0 }}>
-            It genuinely holds a few real misconceptions about {TOPIC_LABEL} and will ask naive
-            follow-up questions until your explanation actually resolves them. Teaching it
+            It genuinely holds a few real misconceptions about the topic below and will ask
+            naive follow-up questions until your explanation actually resolves them. Teaching it
             cements your own understanding — and produces a mastery signal harder to fake than a
             quiz answer.
           </p>
-          <button disabled={busy} onClick={start}>
-            {busy ? "Starting…" : "Start teaching"}
-            {!busy && <ArrowIcon size={17} />}
-          </button>
+          <div className="stack">
+            <input
+              value={topicInput}
+              onChange={(e) => setTopicInput(e.target.value)}
+              placeholder="e.g. derivatives, photosynthesis, the French Revolution…"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && topicInput.trim() && !busy) start();
+              }}
+            />
+            <button disabled={busy || !topicInput.trim()} onClick={start}>
+              {busy ? "Starting…" : "Start teaching"}
+              {!busy && <ArrowIcon size={17} />}
+            </button>
+          </div>
+          <p className="faint" style={{ marginTop: 10, marginBottom: 0 }}>
+            Defaults to whatever you last learned on the Learn page — change it to teach a
+            different topic.
+          </p>
         </div>
       )}
 
@@ -189,7 +227,7 @@ export default function ProtegeMode() {
                       {busy ? "Publishing…" : "Publish this explanation"}
                     </button>
                   )}
-                  <button className="secondary" disabled={busy} onClick={start}>
+                  <button className="secondary" disabled={busy} onClick={restart}>
                     New session
                   </button>
                 </div>
@@ -202,9 +240,9 @@ export default function ProtegeMode() {
                   <CheckIcon size={13} /> Moderation: {publishStatus}
                 </span>
                 <p className="faint" style={{ marginTop: 10, marginBottom: 12 }}>
-                  Posted to the {TOPIC_LABEL} Q&A feed as a peer explanation.
+                  Posted to the {topicName} Q&A feed as a peer explanation.
                 </p>
-                <button className="secondary" disabled={busy} onClick={start}>
+                <button className="secondary" disabled={busy} onClick={restart}>
                   New session
                 </button>
               </div>

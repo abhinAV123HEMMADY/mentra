@@ -169,11 +169,15 @@ async def snap_a_problem_node(state: LearningState) -> dict:
             _LOCALIZE_TOOL,
         )
 
+    real_diagnosis = analysis is not None  # only a live vision pass over actual work counts
     if analysis is None:
         analysis = _stub_analysis()
 
+    # The stub analysis is display-only demo content — writing mastery/struggle rows from it
+    # would fabricate learner state. Only a genuine diagnosis of the learner's own snapped
+    # work is allowed to touch the mastery graph.
     prerequisite_topic_id = None
-    if analysis.get("first_error_step", -1) >= 0 and analysis.get("prerequisite_concept"):
+    if real_diagnosis and analysis.get("first_error_step", -1) >= 0 and analysis.get("prerequisite_concept"):
         prerequisite_topic_id = await _flag_prerequisite_gap(
             state["learner_id"], analysis["prerequisite_concept"]
         )

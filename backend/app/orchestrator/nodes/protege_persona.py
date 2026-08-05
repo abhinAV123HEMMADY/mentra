@@ -8,11 +8,23 @@ topic's open misconceptions in order — matching every other agent node's demo-
 convention.
 """
 
-from app.config import settings
+from app.llm import forced_tool_call, llm_enabled
 from app.orchestrator.nodes.understanding_scorer import _is_stuck
 from app.orchestrator.protege_state import ProtegeState
 
 _WRAP_UP = "Ohh, okay — I think I actually get it now. Thanks for walking me through it!"
+
+_RESPOND_TOOL = {
+    "name": "respond_as_student",
+    "description": "Reply as the confused student for this turn.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "message": {"type": "string", "description": "your one in-character message for this turn"},
+        },
+        "required": ["message"],
+    },
+}
 
 
 def _stub_question(
@@ -44,9 +56,6 @@ async def _claude_question(
     stuck: bool,
     gave_up_on: str | None,
 ) -> str:
-    from anthropic import AsyncAnthropic
-
-    client = AsyncAnthropic(api_key=settings.anthropic_api_key)
     open_misconceptions = [m for m in misconceptions if not checklist.get(m["id"])]
 
     system = (
@@ -89,15 +98,9 @@ async def _claude_question(
             )
 
     convo = "\n".join(f"{t['role']}: {t['content']}" for t in transcript)
-    message = await client.messages.create(
-        model="claude-sonnet-5",
-        max_tokens=180,
-        system=system,
-        messages=[
-            {"role": "user", "content": f"Conversation so far:\n{convo}\n\nRespond as the confused student."}
-        ],
-    )
-    return "".join(block.text for block in message.content if block.type == "text").strip()
+    content = f"Conversation so far:\n{convo}\n\nRespond as the confused student."
+    result = await forced_tool_call(system, content, _RESPOND_TOOL, max_tokens=250)
+    return result["message"].strip() if result else None
 
 
 async def protege_persona_node(state: ProtegeState) -> dict:
@@ -109,11 +112,12 @@ async def protege_persona_node(state: ProtegeState) -> dict:
     last_turn = transcript[-1] if transcript else None
     stuck = bool(last_turn and last_turn["role"] == "learner" and _is_stuck(last_turn["content"]))
 
-    if settings.anthropic_api_key:
+    persona_message = None
+    if llm_enabled():
         persona_message = await _claude_question(
             state["topic_name"], misconceptions, checklist, transcript, stuck, gave_up_on
         )
-    else:
+    if persona_message is None:
         persona_message = _stub_question(misconceptions, checklist, stuck, gave_up_on)
 
     transcript.append({"role": "persona", "content": persona_message})

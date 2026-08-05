@@ -91,12 +91,16 @@ export default function MasteryMap() {
   const { learnerId } = useLearner();
   const navigate = useNavigate();
   const [graph, setGraph] = useState<Graph | null>(null);
+  const [error, setError] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
 
   useEffect(() => {
     setGraph(null);
+    setError(false);
     setSelected(null);
-    getMasteryGraph(learnerId).then(setGraph);
+    getMasteryGraph(learnerId)
+      .then(setGraph)
+      .catch(() => setError(true));
   }, [learnerId]);
 
   const selectedNode = useMemo(
@@ -117,7 +121,12 @@ export default function MasteryMap() {
         </p>
       </div>
 
-      {!graph ? (
+      {error ? (
+        <div className="card animate-in" style={{ borderColor: "var(--struggling)" }}>
+          <span className="tag struggling">Couldn't load mastery data</span>
+          <p style={{ margin: "8px 0 0" }}>Make sure the backend is running, then reload this page.</p>
+        </div>
+      ) : !graph ? (
         <div className="graph-wrap" style={{ padding: 18 }}>
           <div className="skeleton" style={{ height: 380 }} />
         </div>

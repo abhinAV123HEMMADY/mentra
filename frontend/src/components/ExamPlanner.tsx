@@ -77,12 +77,18 @@ function Chart({ plan }: { plan: ExamPlan }) {
 export default function ExamPlanner({ learnerId }: { learnerId: string }) {
   const [days, setDays] = useState(14);
   const [plan, setPlan] = useState<ExamPlan | null>(null);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     let stale = false;
-    getExamPlan(learnerId, days).then((p) => {
-      if (!stale) setPlan(p);
-    });
+    setError(false);
+    getExamPlan(learnerId, days)
+      .then((p) => {
+        if (!stale) setPlan(p);
+      })
+      .catch(() => {
+        if (!stale) setError(true);
+      });
     return () => {
       stale = true;
     };
@@ -115,7 +121,11 @@ export default function ExamPlanner({ learnerId }: { learnerId: string }) {
         style={{ width: "100%" }}
       />
 
-      {!plan ? (
+      {error ? (
+        <p className="faint" style={{ marginTop: 12, marginBottom: 0 }}>
+          Couldn't load an exam plan — make sure the backend is running.
+        </p>
+      ) : !plan ? (
         <div className="skeleton" style={{ height: 150, marginTop: 12 }} />
       ) : (
         <>

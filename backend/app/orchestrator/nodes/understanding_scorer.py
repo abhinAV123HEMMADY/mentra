@@ -7,7 +7,7 @@ no ANTHROPIC_API_KEY is configured, so Protégé Mode demos without a live key l
 agent node in this pipeline.
 """
 
-from app.config import settings
+from app.llm import forced_tool_call, llm_enabled
 from app.orchestrator.protege_state import ProtegeState
 
 _STUCK_PHRASES = ["i don't know", "i dont know", "idk", "not sure", "no idea", "no clue", "i give up"]
@@ -70,9 +70,6 @@ def _stub_score(learner_turn: str, misconceptions: list[dict], checklist: dict[s
 async def _claude_score(
     learner_turn: str, misconceptions: list[dict], checklist: dict[str, bool], transcript: list[dict]
 ) -> list[str]:
-    from anthropic import AsyncAnthropic
-
-    client = AsyncAnthropic(api_key=settings.anthropic_api_key)
     open_misconceptions = [m for m in misconceptions if not checklist.get(m["id"])]
     system = (
         "You are grading a learner who is teaching a confused peer. Given the conversation so "
@@ -83,24 +80,12 @@ async def _claude_score(
     )
     convo = "\n".join(f"{t['role']}: {t['content']}" for t in transcript)
     open_list = "\n".join(f"- {m['id']}: {m['sub_concept']}" for m in open_misconceptions)
-    message = await client.messages.create(
-        model="claude-sonnet-5",
-        max_tokens=300,
-        system=system,
-        tools=[_SCORING_TOOL],
-        tool_choice={"type": "tool", "name": "score_understanding"},
-        messages=[
-            {
-                "role": "user",
-                "content": f"Conversation so far:\n{convo}\n\nOpen misconceptions:\n{open_list}\n\n"
-                f"Learner's latest explanation:\n{learner_turn}",
-            }
-        ],
+    content = (
+        f"Conversation so far:\n{convo}\n\nOpen misconceptions:\n{open_list}\n\n"
+        f"Learner's latest explanation:\n{learner_turn}"
     )
-    for block in message.content:
-        if block.type == "tool_use":
-            return block.input.get("resolved_ids", [])
-    return []
+    result = await forced_tool_call(system, content, _SCORING_TOOL, max_tokens=300)
+    return (result or {}).get("resolved_ids", [])
 
 
 async def understanding_scorer_node(state: ProtegeState) -> dict:
@@ -122,7 +107,7 @@ async def understanding_scorer_node(state: ProtegeState) -> dict:
             if open_misconceptions:
                 gave_up_on = open_misconceptions[0]["id"]
                 newly_resolved = [gave_up_on]
-    elif settings.anthropic_api_key:
+    elif llm_enabled():
         newly_resolved = await _claude_score(learner_turn, misconceptions, checklist, transcript)
     else:
         newly_resolved = _stub_score(learner_turn, misconceptions, checklist)

@@ -25,8 +25,6 @@ async def _run_pipeline(session_id: str, learner_id: str, topic_input: str, inpu
         "confidence_ratings": {},
         "videos": [],
         "tutor_matches": [],
-        "mastery_score": 0.0,
-        "struggle_signal": None,
     }
 
     try:

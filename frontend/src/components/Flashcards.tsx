@@ -6,11 +6,12 @@ import type { Flashcard } from "../types";
 
 const CONF_LABELS = ["No idea", "Shaky", "Unsure", "Maybe", "Likely", "Certain"];
 
-function Card({ card }: { card: Flashcard }) {
+function Card({ card, onMastery }: { card: Flashcard; onMastery: (score: number) => void }) {
   const { learnerId } = useLearner();
   const [confidence, setConfidence] = useState<number | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   const rate = (rating: number) => {
     setConfidence(rating);
@@ -19,8 +20,14 @@ function Card({ card }: { card: Flashcard }) {
 
   const answer = async (recalled: boolean) => {
     if (confidence === null || !card.id) return;
-    await submitConfidence(card.id, learnerId, confidence, recalled);
-    setSubmitted(true);
+    setFailed(false);
+    try {
+      const res = await submitConfidence(card.id, learnerId, confidence, recalled);
+      if (res.mastery_score != null) onMastery(res.mastery_score);
+      setSubmitted(true);
+    } catch {
+      setFailed(true);
+    }
   };
 
   return (
@@ -54,11 +61,14 @@ function Card({ card }: { card: Flashcard }) {
           )}
           <p style={{ margin: "10px 0 14px" }}>{card.back}</p>
           {!submitted ? (
-            <div className="row">
-              <button onClick={() => answer(true)}>Got it</button>
-              <button className="secondary" onClick={() => answer(false)}>
-                Missed it
-              </button>
+            <div className="stack">
+              <div className="row">
+                <button onClick={() => answer(true)}>Got it</button>
+                <button className="secondary" onClick={() => answer(false)}>
+                  Missed it
+                </button>
+              </div>
+              {failed && <span className="faint">Couldn't save — check the backend and try again.</span>}
             </div>
           ) : (
             <span className="tag on_track">
@@ -71,7 +81,13 @@ function Card({ card }: { card: Flashcard }) {
   );
 }
 
-export default function Flashcards({ cards }: { cards: Flashcard[] }) {
+export default function Flashcards({
+  cards,
+  onMastery,
+}: {
+  cards: Flashcard[];
+  onMastery: (score: number) => void;
+}) {
   return (
     <div className="animate-in" style={{ marginBottom: 14 }}>
       <div className="row" style={{ justifyContent: "space-between", padding: "0 2px 10px" }}>
@@ -80,7 +96,7 @@ export default function Flashcards({ cards }: { cards: Flashcard[] }) {
       </div>
       <div className="grid stagger">
         {cards.map((card, i) => (
-          <Card key={card.id ?? i} card={card} />
+          <Card key={card.id ?? i} card={card} onMastery={onMastery} />
         ))}
       </div>
     </div>

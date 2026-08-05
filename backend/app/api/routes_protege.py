@@ -1,4 +1,5 @@
 import json
+import re
 import uuid
 
 import redis.asyncio as redis
@@ -7,8 +8,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import get_db
+from app.mastery.service import recompute_mastery
 from app.models import ProtegeSession, QnaPost, Topic
 from app.moderation.service import moderate_text
+from app.orchestrator.nodes.misconception_generator import generate_misconceptions
 from app.orchestrator.nodes.protege_persona import protege_persona_node
 from app.orchestrator.protege_graph import protege_graph
 from app.realtime import channel_name
@@ -17,6 +20,30 @@ from app.schemas.protege import ChecklistItem, ProtegePublishRequest, ProtegeSta
 router = APIRouter(prefix="/protege", tags=["protege"])
 
 UNDERSTANDING_THRESHOLD = 0.75
+
+
+def _slugify(text: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
+
+
+async def _resolve_topic(db: AsyncSession, topic_name: str) -> Topic:
+    """Any topic can drive Protégé Mode, not just the ones seeded with a hand-written
+    misconception set (Section 9.1) — resolve-or-create the topic row by the same slug
+    convention the main pipeline's intent parser uses, then generate-and-cache its
+    misconceptions on first use so later sessions on the same topic reuse them.
+    """
+    topic_id = _slugify(topic_name)
+    topic = await db.get(Topic, topic_id)
+    if topic is None:
+        topic = Topic(id=topic_id, name=topic_name.strip().lower(), subject="general")
+        db.add(topic)
+        await db.flush()
+
+    if not topic.common_misconceptions:
+        topic.common_misconceptions = await generate_misconceptions(topic.name, topic.subject)
+        await db.flush()
+
+    return topic
 
 
 def _checklist_items(misconceptions: list[dict], checklist: dict[str, bool]) -> list[ChecklistItem]:
@@ -40,10 +67,7 @@ async def start_protege_session(req: ProtegeStartRequest, db: AsyncSession = Dep
     from the topic's real common misconceptions, before the learner has said anything
     (Section 9.1).
     """
-    topic = await db.get(Topic, req.topic_id)
-    if topic is None or not topic.common_misconceptions:
-        raise HTTPException(status_code=400, detail="topic has no common_misconceptions configured for Protégé Mode")
-
+    topic = await _resolve_topic(db, req.topic_name)
     misconceptions = topic.common_misconceptions
     checklist = {m["id"]: False for m in misconceptions}
 
@@ -78,6 +102,7 @@ async def start_protege_session(req: ProtegeStartRequest, db: AsyncSession = Dep
 
     return ProtegeTurnResult(
         session_id=session.id,
+        topic_name=topic.name,
         persona_message=result["persona_message"],
         understanding_score=0.0,
         checklist=_checklist_items(misconceptions, checklist),
@@ -127,10 +152,14 @@ async def submit_protege_turn(req: ProtegeTurnRequest, db: AsyncSession = Depend
     session.misconceptions_resolved = merged["resolved_misconceptions"]
     if merged["understanding_score"] >= UNDERSTANDING_THRESHOLD or merged["status"] == "completed":
         session.status = "completed"
+        # A completed teach-back is a real mastery signal — fold it in now (Section 9.5).
+        await db.flush()
+        await recompute_mastery(db, session.learner_id, session.topic_id)
     await db.commit()
 
     return ProtegeTurnResult(
         session_id=session.id,
+        topic_name=topic.name,
         persona_message=merged["persona_message"],
         understanding_score=merged["understanding_score"],
         checklist=_checklist_items(misconceptions, merged["checklist"]),

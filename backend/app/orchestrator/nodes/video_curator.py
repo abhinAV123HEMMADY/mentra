@@ -18,12 +18,12 @@ async def video_curator_node(state: LearningState) -> dict:
         for r in results
     ]
 
-    # Attach the top video timestamp to any quiz question still waiting on the "video" modality
-    # (Section 4.5's third-tier re-explanation fallback).
+    # Attach the top video timestamp to every quiz question as the "video" modality — the
+    # third-tier re-explanation fallback (Section 4.5), surfaced by the UI only after the
+    # learner misses a question and the analogy/diagram tiers weren't enough.
     quiz = list(state.get("quiz", []))
     if videos:
         for question in quiz:
-            if question.get("needs_video"):
-                question["reexplanations"]["video"] = videos[0]
+            question["reexplanations"]["video"] = videos[0]
 
     return {"videos": videos, "quiz": quiz}
