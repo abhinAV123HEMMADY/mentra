@@ -48,14 +48,9 @@ export default function BookingModal({ tutorId, onClose }: { tutorId: string; on
             No open slots this week.
           </p>
         ) : (
-          <div className="stack" style={{ marginTop: 8 }}>
+          <div className="chip-row" style={{ marginTop: 12 }}>
             {slots.map((slot) => (
-              <button
-                key={slot}
-                className="secondary"
-                style={{ justifyContent: "space-between", width: "100%" }}
-                onClick={() => book(slot)}
-              >
+              <button key={slot} className="chip slot" onClick={() => book(slot)}>
                 {new Date(slot).toLocaleString(undefined, {
                   weekday: "short",
                   month: "short",
@@ -63,7 +58,6 @@ export default function BookingModal({ tutorId, onClose }: { tutorId: string; on
                   hour: "numeric",
                   minute: "2-digit",
                 })}
-                <CheckIcon size={16} className="muted" />
               </button>
             ))}
           </div>

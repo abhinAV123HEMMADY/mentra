@@ -101,7 +101,7 @@ export default function ExamPlanner({ learnerId }: { learnerId: string }) {
       <span className="eyebrow">
         <SparkleIcon size={13} /> Peak on the day
       </span>
-      <h3 style={{ marginTop: 8 }}>Exam-aware scheduling</h3>
+      <h3 style={{ marginTop: 10 }}>Exam-aware scheduling</h3>
       <p className="muted" style={{ marginTop: 0 }}>
         Standard spaced repetition optimizes forever-retention. Set an exam date and Mentra
         bends the tail of the schedule so your memory peaks when it counts.

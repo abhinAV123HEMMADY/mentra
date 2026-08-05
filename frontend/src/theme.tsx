@@ -12,7 +12,8 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 function initialTheme(): Theme {
   const stored = localStorage.getItem("mentra_theme");
   if (stored === "light" || stored === "dark") return stored;
-  return window.matchMedia?.("(prefers-color-scheme: light)").matches ? "light" : "dark";
+  // Light is the canonical Mentra look; only follow an explicit dark preference.
+  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {

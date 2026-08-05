@@ -7,15 +7,15 @@ export default function ErrorAnalysisCard({ analysis }: { analysis: ErrorAnalysi
   const hasError = analysis.first_error_step >= 0;
 
   return (
-    <div className="card animate-in">
+    <div className="card animate-in" style={{ marginTop: 22 }}>
       <span className="eyebrow">
         <CameraIcon size={13} /> Snapped work · error localized
       </span>
-      <h3 style={{ marginTop: 8 }}>
-        <code>{analysis.problem_statement}</code>
-      </h3>
+      <div className="formula" style={{ margin: "12px 0 4px" }}>
+        {analysis.problem_statement}
+      </div>
 
-      <div className="stack" style={{ marginTop: 10, gap: 8 }}>
+      <div className="stack" style={{ marginTop: 14, gap: 8 }}>
         {analysis.steps.map((step, i) => {
           const wrong = i === analysis.first_error_step;
           return (
@@ -25,8 +25,8 @@ export default function ErrorAnalysisCard({ analysis }: { analysis: ErrorAnalysi
               style={{
                 alignItems: "flex-start",
                 gap: 10,
-                padding: "8px 10px",
-                borderRadius: "var(--radius-sm)",
+                padding: "11px 13px",
+                borderRadius: "var(--r-md)",
                 background: wrong ? "var(--struggling-bg)" : "var(--surface-2)",
                 border: wrong ? "1px solid var(--struggling)" : "1px solid transparent",
               }}
@@ -52,25 +52,21 @@ export default function ErrorAnalysisCard({ analysis }: { analysis: ErrorAnalysi
           <p className="muted" style={{ marginTop: 12 }}>
             {analysis.error_explanation}
           </p>
-          <div
-            className="row"
-            style={{
-              justifyContent: "space-between",
-              marginTop: 10,
-              padding: "10px 12px",
-              borderRadius: "var(--radius-sm)",
-              background: "var(--chip-lav)",
-            }}
-          >
-            <span>
-              Gap traced to <strong style={{ textTransform: "capitalize" }}>{analysis.prerequisite_concept}</strong>
-              <span className="faint" style={{ display: "block" }}>
-                not {analysis.tested_concept} itself — your map has been updated
+          <div className="callout lav" style={{ marginTop: 12, marginBottom: 0 }}>
+            <div className="row" style={{ justifyContent: "space-between", flexWrap: "nowrap" }}>
+              <span style={{ minWidth: 0 }}>
+                Gap traced to{" "}
+                <strong style={{ textTransform: "capitalize" }}>
+                  {analysis.prerequisite_concept}
+                </strong>
+                <span className="faint" style={{ display: "block" }}>
+                  not {analysis.tested_concept} itself — your map has been updated
+                </span>
               </span>
-            </span>
-            <button className="secondary" onClick={() => navigate("/map")} style={{ flexShrink: 0 }}>
-              See map <ArrowIcon size={14} />
-            </button>
+              <button className="violet sm" onClick={() => navigate("/map")} style={{ flexShrink: 0 }}>
+                See map <ArrowIcon size={14} />
+              </button>
+            </div>
           </div>
         </>
       ) : (

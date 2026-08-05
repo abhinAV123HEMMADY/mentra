@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { getMasteryGraph } from "../api/rest";
 import ExamPlanner from "../components/ExamPlanner";
 import MasteryGraph from "../components/MasteryGraph";
-import { ArrowIcon, CloseIcon, SparkleIcon } from "../components/Icons";
+import { ArrowIcon, CloseIcon } from "../components/Icons";
 import { useLearner } from "../LearnerContext";
 import type { MasteryGraph as Graph, MasteryNode, MasteryStatus } from "../types";
 
@@ -78,7 +78,7 @@ function NodeSheet({
         </p>
 
         {node.status !== "mastered" && (
-          <button style={{ width: "100%", marginTop: 6 }} onClick={onLearn}>
+          <button className="block" style={{ marginTop: 6 }} onClick={onLearn}>
             {node.status === "decaying" ? "Review now" : "Learn this"} <ArrowIcon size={16} />
           </button>
         )}
@@ -111,20 +111,19 @@ export default function MasteryMap() {
   return (
     <div>
       <div className="page-title">
-        <span className="eyebrow">
-          <SparkleIcon size={13} /> Mastery Map
-        </span>
-        <h2>Your knowledge, alive</h2>
-        <p className="muted" style={{ margin: "2px 0 0" }}>
+        <h1>Your knowledge, alive</h1>
+        <p>
           Every concept you've touched, sized by how much you retain <em>right now</em>. Nodes fade
           as memory decays — tap one to see what's slipping.
         </p>
       </div>
 
       {error ? (
-        <div className="card animate-in" style={{ borderColor: "var(--struggling)" }}>
-          <span className="tag struggling">Couldn't load mastery data</span>
-          <p style={{ margin: "8px 0 0" }}>Make sure the backend is running, then reload this page.</p>
+        <div className="callout warn animate-in">
+          <span className="eyebrow">Couldn't load mastery data</span>
+          <p style={{ margin: "6px 0 0" }}>
+            Make sure the backend is running, then reload this page.
+          </p>
         </div>
       ) : !graph ? (
         <div className="graph-wrap" style={{ padding: 18 }}>

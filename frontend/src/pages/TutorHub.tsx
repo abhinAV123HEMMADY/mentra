@@ -2,7 +2,7 @@ import { useState } from "react";
 import { searchTutors } from "../api/rest";
 import BookingModal from "../components/BookingModal";
 import TutorCard from "../components/TutorCard";
-import { ArrowIcon } from "../components/Icons";
+import { SearchIcon } from "../components/Icons";
 import type { TutorResult } from "../types";
 
 export default function TutorHub() {
@@ -28,59 +28,71 @@ export default function TutorHub() {
 
   return (
     <div>
-      <div className="page-title">
-        <span className="eyebrow">Tutor Hub</span>
-        <h2>Find human help</h2>
+      <div className="search">
+        <SearchIcon />
+        <input
+          value={topicQuery}
+          onChange={(e) => setTopicQuery(e.target.value)}
+          placeholder="Find a guide…"
+          onKeyDown={(e) => {
+            if (e.key === "Enter") search();
+          }}
+        />
+        <button className="icon-btn" onClick={search} aria-label="Search tutors">
+          <SearchIcon size={17} />
+        </button>
       </div>
 
-      <div className="card">
-        <div className="stack">
-          <input
-            value={topicQuery}
-            onChange={(e) => setTopicQuery(e.target.value)}
-            placeholder="Topic"
-          />
-          <div className="row" style={{ gap: 8 }}>
-            <input
-              value={priceMax}
-              onChange={(e) => setPriceMax(e.target.value)}
-              placeholder="Max $/hr"
-              inputMode="numeric"
-              style={{ flex: 1, minWidth: 0 }}
-            />
-            <select
-              value={format}
-              onChange={(e) => setFormat(e.target.value)}
-              style={{ flex: 1, minWidth: 0 }}
-            >
-              <option value="">Any format</option>
-              <option value="virtual">Virtual</option>
-              <option value="in_person">In person</option>
-            </select>
-          </div>
-          <select value={verificationTier} onChange={(e) => setVerificationTier(e.target.value)}>
-            <option value="">Any verification tier</option>
-            <option value="unverified">Unverified</option>
-            <option value="basic">Basic</option>
-            <option value="background_checked">Background checked</option>
-          </select>
-          <button onClick={search}>
-            Search tutors <ArrowIcon size={16} />
-          </button>
-        </div>
+      <div className="chip-row" style={{ marginTop: 12 }}>
+        <select
+          className="filter-select"
+          value={format}
+          onChange={(e) => setFormat(e.target.value)}
+          aria-label="Session format"
+        >
+          <option value="">Any format</option>
+          <option value="virtual">Virtual</option>
+          <option value="in_person">In person</option>
+        </select>
+        <select
+          className="filter-select"
+          value={priceMax}
+          onChange={(e) => setPriceMax(e.target.value)}
+          aria-label="Max price per hour"
+        >
+          <option value="">Any price</option>
+          <option value="40">Under $40/hr</option>
+          <option value="60">Under $60/hr</option>
+          <option value="90">Under $90/hr</option>
+        </select>
+        <select
+          className="filter-select"
+          value={verificationTier}
+          onChange={(e) => setVerificationTier(e.target.value)}
+          aria-label="Verification tier"
+        >
+          <option value="">Any tier</option>
+          <option value="unverified">Unverified</option>
+          <option value="basic">Basic</option>
+          <option value="background_checked">Background checked</option>
+        </select>
       </div>
+
+      <button className="block" style={{ marginTop: 16 }} onClick={search}>
+        Search guides
+      </button>
 
       {results.length > 0 ? (
-        <div className="grid stagger">
+        <div className="stack stagger" style={{ marginTop: 22 }}>
           {results.map((t) => (
             <TutorCard key={t.id} tutor={t} onBook={() => setBookingTutorId(t.id)} />
           ))}
         </div>
       ) : (
         searched && (
-          <div className="empty card">
+          <div className="card empty" style={{ marginTop: 22 }}>
             <span className="emoji">🔍</span>
-            No tutors match those filters — try loosening the price or tier.
+            No guides match those filters — try loosening the price or tier.
           </div>
         )
       )}

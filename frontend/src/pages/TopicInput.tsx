@@ -1,5 +1,7 @@
 import { useRef, useState } from "react";
-import { ArrowIcon, CameraIcon, SparkleIcon } from "../components/Icons";
+import { CameraIcon, SearchIcon } from "../components/Icons";
+
+const TRENDING = ["Integration by Parts", "Covalent Bonds", "Macroeconomics", "Derivatives"];
 
 export default function TopicInput({
   onSubmit,
@@ -21,33 +23,20 @@ export default function TopicInput({
   };
 
   return (
-    <div className="card animate-in">
-      <span className="eyebrow">
-        <SparkleIcon size={13} /> Start a session
-      </span>
-      <h2 style={{ marginTop: 8 }}>What are you learning?</h2>
-      <p className="muted" style={{ marginTop: 0 }}>
-        Type a topic — try <code>derivatives</code> to watch Mentra trace the gap back to{" "}
-        <code>limits</code>. Or snap your worked attempt and Mentra finds the exact step where
-        it broke.
-      </p>
+    <div className="animate-in">
+      <h1 className="display">What are you struggling with today?</h1>
 
-      <div className="stack" style={{ marginTop: 4 }}>
+      <div className="search">
+        <SearchIcon />
         <input
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
-          placeholder="e.g. derivatives, photosynthesis, the French Revolution…"
+          placeholder="Search topics, formulas, or concepts"
+          disabled={disabled}
           onKeyDown={(e) => {
             if (e.key === "Enter" && topic.trim() && !disabled) onSubmit(topic.trim(), "text");
           }}
         />
-        <button
-          disabled={disabled || !topic.trim()}
-          onClick={() => onSubmit(topic.trim(), "text")}
-        >
-          {disabled ? "Generating…" : "Generate lesson"}
-          {!disabled && <ArrowIcon size={17} />}
-        </button>
         <input
           ref={fileRef}
           type="file"
@@ -60,22 +49,52 @@ export default function TopicInput({
           }}
         />
         <button
-          className="secondary"
+          className="icon-btn"
           disabled={disabled}
           onClick={() => fileRef.current?.click()}
-          title="Photograph your worked attempt — Mentra localizes the first wrong step"
+          title="Snap your worked attempt — Mentra localizes the first wrong step"
+          aria-label="Snap a problem"
         >
-          <CameraIcon /> Snap your work
-        </button>
-        <button
-          className="link-quiet"
-          disabled={disabled}
-          onClick={() => onSubmit("sample handwritten work", "photo")}
-          style={{ background: "none", border: "none", color: "var(--muted)", fontSize: 13, cursor: "pointer", padding: 0 }}
-        >
-          …or try a sample photo (∫ x·cos x dx with a sign slip)
+          <CameraIcon size={17} />
         </button>
       </div>
+
+      <div className="chip-row" style={{ marginTop: 14 }}>
+        <span className="faint" style={{ marginRight: 2 }}>
+          Trending:
+        </span>
+        {TRENDING.map((t) => (
+          <button
+            key={t}
+            className="chip"
+            disabled={disabled}
+            onClick={() => {
+              setTopic(t);
+              onSubmit(t, "text");
+            }}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
+      <button
+        className="block"
+        style={{ marginTop: 18 }}
+        disabled={disabled || !topic.trim()}
+        onClick={() => onSubmit(topic.trim(), "text")}
+      >
+        {disabled ? "Generating…" : "Start learning"}
+      </button>
+
+      <button
+        className="ghost"
+        disabled={disabled}
+        onClick={() => onSubmit("sample handwritten work", "photo")}
+        style={{ display: "block", margin: "6px auto 0", fontWeight: 500, fontSize: 12.5 }}
+      >
+        …or try a sample photo (∫ x·cos x dx with a sign slip)
+      </button>
     </div>
   );
 }

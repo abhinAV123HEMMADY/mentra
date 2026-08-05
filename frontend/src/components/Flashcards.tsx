@@ -35,16 +35,16 @@ function Card({ card, onMastery }: { card: Flashcard; onMastery: (score: number)
       <div className="flip-inner" style={{ minHeight: 168 }}>
         {/* Front — question + confidence */}
         <div className="flip-face card" style={{ margin: 0, height: "100%" }}>
-          <span className="faint">Rate your confidence first</span>
-          <strong style={{ display: "block", margin: "8px 0 14px", fontSize: 16 }}>
+          <span className="eyebrow">Rate your confidence first</span>
+          <strong style={{ display: "block", margin: "10px 0 16px", fontSize: 16 }}>
             {card.front}
           </strong>
-          <div className="row" style={{ gap: 6 }}>
+          <div className="chip-row" style={{ gap: 6 }}>
             {[0, 1, 2, 3, 4, 5].map((n) => (
               <button
                 key={n}
-                className="secondary chip"
-                style={{ minWidth: 38 }}
+                className="chip"
+                style={{ minWidth: 40 }}
                 onClick={() => rate(n)}
                 title={CONF_LABELS[n]}
               >
@@ -59,12 +59,14 @@ function Card({ card, onMastery }: { card: Flashcard; onMastery: (score: number)
           {confidence !== null && (
             <span className="tag lav">confidence {confidence} · {CONF_LABELS[confidence]}</span>
           )}
-          <p style={{ margin: "10px 0 14px" }}>{card.back}</p>
+          <p style={{ margin: "12px 0 16px" }}>{card.back}</p>
           {!submitted ? (
             <div className="stack">
-              <div className="row">
-                <button onClick={() => answer(true)}>Got it</button>
-                <button className="secondary" onClick={() => answer(false)}>
+              <div className="row" style={{ flexWrap: "nowrap" }}>
+                <button style={{ flex: 1 }} onClick={() => answer(true)}>
+                  Got it
+                </button>
+                <button className="secondary" style={{ flex: 1 }} onClick={() => answer(false)}>
                   Missed it
                 </button>
               </div>
@@ -90,9 +92,9 @@ export default function Flashcards({
 }) {
   return (
     <div className="animate-in" style={{ marginBottom: 14 }}>
-      <div className="row" style={{ justifyContent: "space-between", padding: "0 2px 10px" }}>
-        <h3 style={{ margin: 0 }}>Flashcards</h3>
-        <span className="tag neutral">{cards.length} cards</span>
+      <div className="section-head">
+        <h2>Flashcards</h2>
+        <span className="faint">{cards.length} cards · FSRS</span>
       </div>
       <div className="grid stagger">
         {cards.map((card, i) => (

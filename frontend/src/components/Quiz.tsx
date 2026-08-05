@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { submitQuizAnswer } from "../api/rest";
-import { CheckIcon, CloseIcon, PlayIcon } from "./Icons";
+import { ArrowIcon, PlayIcon } from "./Icons";
 import type { QuizQuestion } from "../types";
 
 const MODALITY_ORDER = ["analogy", "diagram", "video"] as const;
@@ -15,11 +15,11 @@ function Reexplanation({ question }: { question: QuizQuestion }) {
   if (available.length === 0) return null;
 
   return (
-    <div style={{ marginTop: 10 }}>
-      <span className="faint">Re-explained another way</span>
-      <div className="stack" style={{ marginTop: 8 }}>
+    <div style={{ marginTop: 14 }}>
+      <span className="eyebrow">Re-explained another way</span>
+      <div className="stack" style={{ marginTop: 10 }}>
         {shown.map((modality) => (
-          <div key={modality} className="link-row" style={{ cursor: "default", gap: 10 }}>
+          <div key={modality} className="link-row" style={{ gap: 10, alignItems: "flex-start" }}>
             <span className="tag lav">{modality}</span>
             {modality === "video" && video ? (
               <a
@@ -41,7 +41,7 @@ function Reexplanation({ question }: { question: QuizQuestion }) {
         ))}
       </div>
       {tiers < available.length && (
-        <button className="ghost" style={{ marginTop: 6 }} onClick={() => setTiers(tiers + 1)}>
+        <button className="ghost" style={{ marginTop: 8 }} onClick={() => setTiers(tiers + 1)}>
           Still confused? Try the {available[tiers]} →
         </button>
       )}
@@ -51,25 +51,30 @@ function Reexplanation({ question }: { question: QuizQuestion }) {
 
 function QuestionBlock({
   q,
+  index,
+  total,
   lessonId,
   onMastery,
 }: {
   q: QuizQuestion;
+  index: number;
+  total: number;
   lessonId?: string;
   onMastery: (score: number) => void;
 }) {
   const [revealed, setRevealed] = useState(false);
+  const [picked, setPicked] = useState<boolean | null>(null);
   const [outcome, setOutcome] = useState<boolean | null>(null);
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState(false);
 
-  const mark = async (correct: boolean) => {
-    if (!lessonId || saving) return;
+  const mark = async () => {
+    if (!lessonId || saving || picked === null) return;
     setSaving(true);
     setFailed(false);
     try {
-      const res = await submitQuizAnswer(lessonId, q.question, correct);
-      setOutcome(correct);
+      const res = await submitQuizAnswer(lessonId, q.question, picked);
+      setOutcome(picked);
       if (res.mastery_score != null) onMastery(res.mastery_score);
     } catch {
       setFailed(true);
@@ -78,45 +83,72 @@ function QuestionBlock({
     }
   };
 
+  const optionClass = (value: boolean) => {
+    if (outcome !== null) {
+      if (outcome !== value) return "option";
+      return `option ${value ? "correct" : "wrong"}`;
+    }
+    return picked === value ? "option selected" : "option";
+  };
+
   return (
-    <div className="example">
-      <div className="row" style={{ alignItems: "flex-start", gap: 10 }}>
-        {outcome !== null && (
-          <span
-            className="tag"
-            style={{
-              background: outcome ? "var(--ontrack-bg)" : "var(--struggling-bg)",
-              color: outcome ? "var(--ontrack)" : "var(--struggling)",
-              marginTop: 2,
-            }}
-          >
-            {outcome ? <CheckIcon size={13} /> : <CloseIcon size={13} />}
-          </span>
-        )}
-        <strong style={{ flex: 1 }}>{q.question}</strong>
-      </div>
+    <div className="card animate-in">
+      <span className="tag lav" style={{ marginBottom: 12, display: "inline-flex" }}>
+        Question {index + 1} of {total}
+      </span>
+      <h3 style={{ margin: "0 0 14px" }}>{q.question}</h3>
 
       {!revealed ? (
-        <button className="secondary" style={{ marginTop: 10 }} onClick={() => setRevealed(true)}>
+        <button className="secondary block" onClick={() => setRevealed(true)}>
           Show answer
         </button>
       ) : (
         <>
-          <p className="muted" style={{ margin: "10px 0 0" }}>{q.answer}</p>
+          <div className="callout lav" style={{ marginBottom: 16 }}>
+            <p style={{ margin: 0 }}>{q.answer}</p>
+          </div>
+
+          <span className="eyebrow">Grade yourself honestly</span>
+          <div className="stack" style={{ marginTop: 10 }}>
+            <button
+              className={optionClass(true)}
+              disabled={outcome !== null || saving}
+              onClick={() => setPicked(true)}
+            >
+              I got it right
+            </button>
+            <button
+              className={optionClass(false)}
+              disabled={outcome !== null || saving}
+              onClick={() => setPicked(false)}
+            >
+              I missed it
+            </button>
+          </div>
+
           {outcome === null && (
-            <div className="stack" style={{ marginTop: 10 }}>
-              <div className="row">
-                <button disabled={!lessonId || saving} onClick={() => mark(true)}>
-                  I got it
-                </button>
-                <button className="secondary" disabled={!lessonId || saving} onClick={() => mark(false)}>
-                  I missed it
-                </button>
-              </div>
-              {!lessonId && <span className="faint">Finishing up the session…</span>}
-              {failed && <span className="faint">Couldn't save — check the backend and try again.</span>}
-            </div>
+            <>
+              <button
+                className="block"
+                style={{ marginTop: 16 }}
+                disabled={!lessonId || saving || picked === null}
+                onClick={mark}
+              >
+                {saving ? "Saving…" : "Check answer"} {!saving && <ArrowIcon size={16} />}
+              </button>
+              {!lessonId && (
+                <span className="faint" style={{ marginTop: 10 }}>
+                  Finishing up the session…
+                </span>
+              )}
+              {failed && (
+                <span className="faint" style={{ marginTop: 10 }}>
+                  Couldn't save — check the backend and try again.
+                </span>
+              )}
+            </>
           )}
+
           {outcome === false && <Reexplanation question={q} />}
         </>
       )}
@@ -134,16 +166,22 @@ export default function Quiz({
   onMastery: (score: number) => void;
 }) {
   return (
-    <div className="card animate-in">
-      <span className="eyebrow">Quiz</span>
-      <h3 style={{ marginTop: 6, marginBottom: 10 }}>Check your understanding</h3>
-      <p className="faint" style={{ marginTop: 0 }}>
-        Answer it in your head (or on paper), reveal, then grade yourself honestly — this is
-        what actually moves your mastery.
-      </p>
+    <>
+      <div className="section-head">
+        <h2>Check your understanding</h2>
+        <span className="faint">{quiz.length} questions</span>
+      </div>
+      <p className="section-sub">Answer it in your head, reveal, then grade yourself honestly.</p>
       {quiz.map((q, i) => (
-        <QuestionBlock key={i} q={q} lessonId={lessonId} onMastery={onMastery} />
+        <QuestionBlock
+          key={i}
+          q={q}
+          index={i}
+          total={quiz.length}
+          lessonId={lessonId}
+          onMastery={onMastery}
+        />
       ))}
-    </div>
+    </>
   );
 }

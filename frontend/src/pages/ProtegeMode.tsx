@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { publishProtegeExplanation, sendProtegeTurn, startProtege } from "../api/rest";
-import { ArrowIcon, ChatIcon, CheckIcon, SparkleIcon } from "../components/Icons";
+import { ArrowIcon, ChatIcon, CheckIcon } from "../components/Icons";
 import { useLearner } from "../LearnerContext";
 import type { ChatMessage, ChecklistItem } from "../types";
 
@@ -100,22 +100,21 @@ export default function ProtegeMode() {
         <span className="eyebrow">
           <ChatIcon size={13} /> Protégé Mode
         </span>
-        <h2>Teach Mentra {status === "idle" ? topicInput || "…" : topicName}</h2>
+        <h1 style={{ marginTop: 6 }}>
+          Teach Mentra {status === "idle" ? topicInput || "…" : topicName}
+        </h1>
       </div>
 
       {error && (
-        <div className="card animate-in" style={{ borderColor: "var(--struggling)" }}>
-          <span className="tag struggling">Something went wrong</span>
-          <p style={{ margin: "8px 0 0" }}>{error}</p>
+        <div className="callout warn animate-in">
+          <span className="eyebrow">Something went wrong</span>
+          <p style={{ margin: "6px 0 0" }}>{error}</p>
         </div>
       )}
 
       {status === "idle" && (
         <div className="card animate-in">
-          <span className="eyebrow">
-            <SparkleIcon size={13} /> Flip the roles
-          </span>
-          <h3 style={{ marginTop: 8 }}>Mentra plays a confused student</h3>
+          <h3 style={{ marginTop: 0 }}>Mentra plays a confused student</h3>
           <p className="muted" style={{ marginTop: 0 }}>
             It genuinely holds a few real misconceptions about the topic below and will ask
             naive follow-up questions until your explanation actually resolves them. Teaching it
@@ -131,15 +130,14 @@ export default function ProtegeMode() {
                 if (e.key === "Enter" && topicInput.trim() && !busy) start();
               }}
             />
-            <button disabled={busy || !topicInput.trim()} onClick={start}>
+            <button className="block" disabled={busy || !topicInput.trim()} onClick={start}>
               {busy ? "Starting…" : "Start teaching"}
               {!busy && <ArrowIcon size={17} />}
             </button>
           </div>
-          <p className="faint" style={{ marginTop: 10, marginBottom: 0 }}>
-            Defaults to whatever you last learned on the Learn page — change it to teach a
-            different topic.
-          </p>
+          <span className="faint" style={{ marginTop: 12 }}>
+            Defaults to whatever you last learned on the Learn page.
+          </span>
         </div>
       )}
 
@@ -148,12 +146,14 @@ export default function ProtegeMode() {
           <div className="card animate-in">
             <div className="row" style={{ justifyContent: "space-between" }}>
               <h3 style={{ margin: 0 }}>Understanding</h3>
-              <strong style={{ fontSize: 20 }}>{Math.round(understandingScore * 100)}%</strong>
+              <strong style={{ fontSize: 22, letterSpacing: "-0.02em" }}>
+                {Math.round(understandingScore * 100)}%
+              </strong>
             </div>
-            <div className="meter" style={{ marginTop: 12 }}>
+            <div className="meter" style={{ marginTop: 14 }}>
               <span style={{ width: `${Math.min(100, Math.max(4, understandingScore * 100))}%` }} />
             </div>
-            <div className="row" style={{ marginTop: 14, gap: 6 }}>
+            <div className="chip-row" style={{ marginTop: 14, gap: 6 }}>
               {checklist.map((item) => (
                 <span key={item.id} className={`tag ${item.covered ? "on_track" : "neutral"}`}>
                   {item.covered && <CheckIcon size={12} />}
@@ -161,9 +161,9 @@ export default function ProtegeMode() {
                 </span>
               ))}
             </div>
-            <p className="faint" style={{ marginTop: 10, marginBottom: 0 }}>
+            <span className="faint" style={{ marginTop: 12 }}>
               {coveredCount}/{checklist.length} misconceptions resolved
-            </p>
+            </span>
           </div>
 
           <div className="card animate-in">
@@ -214,7 +214,7 @@ export default function ProtegeMode() {
             )}
 
             {status === "completed" && (
-              <div className="card" style={{ borderColor: "var(--primary)", background: "var(--chip-lav)", marginTop: 14, marginBottom: 0 }}>
+              <div className="callout lav" style={{ marginTop: 14, marginBottom: 0 }}>
                 <span className="eyebrow">Session complete</span>
                 <p style={{ margin: "6px 0 0" }}>
                   {canPublish

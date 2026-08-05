@@ -5,7 +5,7 @@ import ErrorAnalysisCard from "../components/ErrorAnalysisCard";
 import Flashcards from "../components/Flashcards";
 import Lesson from "../components/Lesson";
 import Quiz from "../components/Quiz";
-import { ArrowIcon, ChatIcon, MapIcon, PeerIcon, PlayIcon, SparkleIcon, StarIcon } from "../components/Icons";
+import { AlertIcon, ArrowIcon, PlayIcon, StarIcon } from "../components/Icons";
 import { useLearner } from "../LearnerContext";
 import type { LearningSessionData, PipelineUpdate } from "../types";
 import TopicInput from "./TopicInput";
@@ -61,60 +61,30 @@ export default function LearningPipeline() {
 
   return (
     <div>
-      <div className="card animate-in">
-        <span className="eyebrow">
-          <SparkleIcon size={13} /> Welcome to Mentra
-        </span>
-        <h2 style={{ marginTop: 8 }}>One topic in, a full learning package out</h2>
-        <p className="muted" style={{ marginTop: 0 }}>
-          Type anything you're stuck on — Mentra traces it back to the real prerequisite gap if
-          there is one, then builds a lesson, a re-explaining quiz, an FSRS flashcard deck, and
-          exact video timestamps, all streaming in live.
-        </p>
-        <div className="row" style={{ gap: 16, marginTop: 4 }}>
-          <span className="faint">
-            <ChatIcon size={13} /> Teach it back
-          </span>
-          <span className="faint">
-            <MapIcon size={13} /> Track real mastery
-          </span>
-          <span className="faint">
-            <PeerIcon size={13} /> See who else is stuck
-          </span>
-        </div>
-        <p className="faint" style={{ marginTop: 14, marginBottom: 0, textAlign: "center" }}>
-          ↓ scroll down to type a topic
-        </p>
-      </div>
-
       <TopicInput onSubmit={onSubmit} disabled={running} />
 
       {error && (
-        <div className="card animate-in" style={{ borderColor: "var(--struggling)" }}>
-          <span className="tag struggling">Couldn't generate a lesson</span>
-          <p style={{ margin: "8px 0 0" }}>{error}</p>
+        <div className="callout warn animate-in" style={{ marginTop: 18 }}>
+          <span className="eyebrow">Couldn't generate a lesson</span>
+          <p style={{ margin: "6px 0 0" }}>{error}</p>
         </div>
       )}
 
       {running && (
-        <div className="card animate-in">
-          <div className="row" style={{ justifyContent: "space-between" }}>
-            <strong>Building your learning package…</strong>
+        <div className="card animate-in" style={{ marginTop: 22 }}>
+          <div className="row" style={{ justifyContent: "space-between", marginBottom: 12 }}>
+            <strong style={{ fontSize: 14 }}>Building your package…</strong>
             <span className="faint">streaming live</span>
           </div>
-          <div className="steps">
-            {STEP_LABELS.map((_, i) => (
-              <div
-                key={i}
-                className={`step ${stepDone[i] ? "done" : i === activeStep ? "active" : ""}`}
-              />
-            ))}
-          </div>
-          <div className="row" style={{ marginTop: 8, gap: 14 }}>
+          <div className="stepper">
             {STEP_LABELS.map((label, i) => (
-              <span key={label} className="faint" style={{ opacity: stepDone[i] ? 1 : 0.5 }}>
-                {label}
-              </span>
+              <div key={label} style={{ display: "contents" }}>
+                {i > 0 && <span className="stepper-line" />}
+                <div className={`stepper-item ${stepDone[i] || i === activeStep ? "on" : ""}`}>
+                  <span className="stepper-dot">{i + 1}</span>
+                  {label}
+                </div>
+              </div>
             ))}
           </div>
         </div>
@@ -123,32 +93,37 @@ export default function LearningPipeline() {
       {data.error_analysis && <ErrorAnalysisCard analysis={data.error_analysis} />}
 
       {data.prerequisite_gap && (
-        <div
-          className="card animate-in"
-          style={{ borderColor: "var(--primary)", background: "var(--chip-lav)" }}
-        >
-          <span className="eyebrow">Prerequisite gap traced</span>
-          <p style={{ margin: "6px 0 0" }}>
-            Your mastery on <code>{data.prerequisite_gap}</code> is below threshold, so this lesson
-            targets the real upstream gap instead of the topic you asked for.
+        <div className="callout animate-in" style={{ marginTop: 18 }}>
+          <span className="eyebrow">
+            <AlertIcon size={16} /> Prerequisite Alert
+          </span>
+          <p style={{ margin: "8px 0 0" }}>
+            Your mastery on{" "}
+            <strong style={{ textTransform: "capitalize" }}>{data.prerequisite_gap}</strong> is
+            below threshold, so this lesson targets the real upstream gap instead of the topic you
+            asked for.
           </p>
         </div>
       )}
 
-      {data.lesson?.overview && <Lesson lesson={data.lesson} />}
+      {data.lesson?.overview && (
+        <Lesson lesson={data.lesson} stepsDone={stepDone.filter(Boolean).length} />
+      )}
+
       {data.quiz && data.quiz.length > 0 && (
         <Quiz quiz={data.quiz} lessonId={data.lesson?.lesson_id} onMastery={setMastery} />
       )}
+
       {data.flashcards && data.flashcards.length > 0 && (
         <Flashcards cards={data.flashcards} onMastery={setMastery} />
       )}
 
       {data.videos && data.videos.length > 0 && (
-        <div className="card animate-in">
-          <h3>Jump to the exact moment</h3>
-          <p className="muted" style={{ marginTop: 0 }}>
-            Timestamp-level matches, not whole videos.
-          </p>
+        <>
+          <div className="section-head">
+            <h3>Jump to the moment</h3>
+            <span className="faint">timestamped</span>
+          </div>
           <div className="stack">
             {data.videos.map((v) => (
               <a
@@ -173,21 +148,18 @@ export default function LearningPipeline() {
               </a>
             ))}
           </div>
-        </div>
+        </>
       )}
 
       {data.tutor_matches && data.tutor_matches.length > 0 && (
-        <div className="card animate-in">
-          <h3>Human help on this topic</h3>
+        <>
+          <div className="section-head">
+            <h3>Human help on this topic</h3>
+          </div>
           <div className="stack">
             {data.tutor_matches.map((t) => (
-              <div key={t.id} className="link-row" style={{ cursor: "default" }}>
-                <span
-                  className="avatar"
-                  style={{ background: "linear-gradient(135deg, var(--primary), var(--primary-2))" }}
-                >
-                  {t.name.charAt(0)}
-                </span>
+              <div key={t.id} className="link-row">
+                <span className="avatar">{t.name.charAt(0)}</span>
                 <span style={{ flex: 1 }}>
                   <strong style={{ display: "block" }}>{t.name}</strong>
                   <span className="faint">
@@ -198,19 +170,23 @@ export default function LearningPipeline() {
               </div>
             ))}
           </div>
-        </div>
+        </>
       )}
 
       {data.quiz && data.quiz.length > 0 && (
-        <div className="card animate-in">
+        <div className="card animate-in" style={{ marginTop: 22 }}>
           <div className="row" style={{ justifyContent: "space-between" }}>
             <h3 style={{ margin: 0 }}>Mastery</h3>
-            <strong style={{ fontSize: 20 }}>{Math.round((mastery ?? 0) * 100)}%</strong>
+            <strong style={{ fontSize: 22, letterSpacing: "-0.02em" }}>
+              {Math.round((mastery ?? 0) * 100)}%
+            </strong>
           </div>
-          <div className="meter" style={{ marginTop: 12 }}>
-            <span style={{ width: `${Math.min(100, Math.max(mastery ? 4 : 0, (mastery ?? 0) * 100))}%` }} />
+          <div className="meter" style={{ marginTop: 14 }}>
+            <span
+              style={{ width: `${Math.min(100, Math.max(mastery ? 4 : 0, (mastery ?? 0) * 100))}%` }}
+            />
           </div>
-          <p className="faint" style={{ marginTop: 10, marginBottom: 0 }}>
+          <p className="faint" style={{ marginTop: 12, marginBottom: 0, display: "block" }}>
             {mastery === null
               ? "Nothing earned yet — answer the quiz and review the cards; this fills only from what you actually demonstrate."
               : "Recomputed from your real quiz answers, card reviews, and teach-back sessions."}
@@ -219,7 +195,7 @@ export default function LearningPipeline() {
       )}
 
       {data.done && (
-        <p className="muted" style={{ textAlign: "center", padding: "8px 0 4px" }}>
+        <p className="faint" style={{ display: "block", textAlign: "center", padding: "8px 0 4px" }}>
           ✓ Session complete
         </p>
       )}

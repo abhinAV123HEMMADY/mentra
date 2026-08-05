@@ -153,6 +153,14 @@ function AnimatedRoutes() {
 
 const tabClass = ({ isActive }: { isActive: boolean }) => (isActive ? "tab active" : "tab");
 
+const TABS = [
+  { to: "/", end: true, label: "Learn", Icon: LearnIcon },
+  { to: "/map", end: false, label: "Mastery", Icon: MapIcon },
+  { to: "/protege", end: false, label: "Teach", Icon: ChatIcon },
+  { to: "/peer", end: false, label: "Squads", Icon: PeerIcon },
+  { to: "/tutors", end: false, label: "Tutors", Icon: TutorIcon },
+];
+
 export default function App() {
   return (
     <ThemeProvider>
@@ -160,14 +168,11 @@ export default function App() {
         <Router>
           <div className="app-shell">
             <header className="app-header">
-              <div className="brand">
-                <span className="brand-dot">
-                  <LearnIcon size={15} />
-                </span>
-                Mentra
-              </div>
-              <div className="header-actions">
+              <div className="header-lead">
                 <LearnerSwitcher />
+              </div>
+              <div className="brand">Mentra</div>
+              <div className="header-actions">
                 <ThemeToggle />
               </div>
             </header>
@@ -177,26 +182,14 @@ export default function App() {
             </main>
 
             <nav className="tabbar">
-              <NavLink to="/" end className={tabClass}>
-                <LearnIcon />
-                Learn
-              </NavLink>
-              <NavLink to="/map" className={tabClass}>
-                <MapIcon />
-                Map
-              </NavLink>
-              <NavLink to="/protege" className={tabClass}>
-                <ChatIcon />
-                Teach
-              </NavLink>
-              <NavLink to="/peer" className={tabClass}>
-                <PeerIcon />
-                Peers
-              </NavLink>
-              <NavLink to="/tutors" className={tabClass}>
-                <TutorIcon />
-                Tutors
-              </NavLink>
+              {TABS.map(({ to, end, label, Icon }) => (
+                <NavLink key={to} to={to} end={end} className={tabClass}>
+                  <span className="tab-icon">
+                    <Icon size={19} />
+                  </span>
+                  {label}
+                </NavLink>
+              ))}
             </nav>
           </div>
         </Router>

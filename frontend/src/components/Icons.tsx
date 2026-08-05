@@ -130,6 +130,33 @@ export function PlayIcon({ size = 16, className }: IconProps) {
   );
 }
 
+export function SearchIcon({ size = 18, className }: IconProps) {
+  return (
+    <svg {...base(size, className)}>
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="m16 16 4.5 4.5" />
+    </svg>
+  );
+}
+
+export function AlertIcon({ size = 18, className }: IconProps) {
+  return (
+    <svg {...base(size, className)}>
+      <path d="M12 4.2 2.8 19.5h18.4L12 4.2Z" />
+      <path d="M12 10v4M12 17h.01" />
+    </svg>
+  );
+}
+
+export function InfoIcon({ size = 16, className }: IconProps) {
+  return (
+    <svg {...base(size, className)}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 11v5M12 8h.01" />
+    </svg>
+  );
+}
+
 export function ChatIcon({ size = 22, className }: IconProps) {
   return (
     <svg {...base(size, className)}>
